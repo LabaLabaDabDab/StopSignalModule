@@ -183,17 +183,12 @@ public class DatabaseHandler {
 
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
             switch (format.toLowerCase()) {
-                case "txt":
-                    saveAsTxt(tableData, columnNames, writer);
-                    break;
-                case "csv":
-                    saveAsCsv(tableData, columnNames, writer);
-                    break;
-                case "iqdat":
-                    saveAsIqdat(tableData, columnNames, writer);
-                    break;
-                default:
-                    return false; // Неподдерживаемый формат
+                case "txt" -> saveAsTxt(tableData, columnNames, writer);
+                case "csv" -> saveAsCsv(tableData, columnNames, writer);
+                case "iqdat" -> saveAsIqdat(tableData, columnNames, writer);
+                default -> {
+                    return false;
+                }
             }
             return true;
         } catch (IOException e) {
