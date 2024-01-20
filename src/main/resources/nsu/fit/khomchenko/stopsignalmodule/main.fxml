@@ -26,14 +26,23 @@
                         <MenuItem mnemonicParsing="false" text="Закрыть" />
                         <MenuItem mnemonicParsing="false" text="Откатить" />
                         <SeparatorMenuItem mnemonicParsing="false" />
-                        <MenuItem mnemonicParsing="false" text="Настройки…" />
+                        <Menu mnemonicParsing="false" text="Настройки">
+                            <items>
+                                <Menu mnemonicParsing="false" text="Тема">
+                                    <items>
+                                        <MenuItem mnemonicParsing="false" onAction="#setLightTheme" text="Светлая" />
+                                        <MenuItem mnemonicParsing="false" onAction="#setDarkTheme" text="Тёмная" />
+                                    </items>
+                                </Menu>
+                            </items>
+                        </Menu>
                         <SeparatorMenuItem mnemonicParsing="false" />
-                        <MenuItem mnemonicParsing="false" text="Выход" />
+                        <MenuItem mnemonicParsing="false" onAction="#handleExit" text="Выход" />
                     </items>
                 </Menu>
                 <Menu mnemonicParsing="false" text="Помощь">
                     <items>
-                        <MenuItem mnemonicParsing="false" text="О приложении" />
+                        <MenuItem mnemonicParsing="false" onAction="#showAboutDialog" text="О приложении" />
                     </items>
                 </Menu>
             </menus>

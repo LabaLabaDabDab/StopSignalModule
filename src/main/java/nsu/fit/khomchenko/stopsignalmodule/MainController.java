@@ -6,18 +6,21 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.stage.FileChooser;
 
 import java.io.File;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
-import java.util.Scanner;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class MainController {
     private static final boolean USE_CONSOLE_INTERFACE = false;
+    private Scene scene;
+
+    public void setScene(Scene scene) {
+        this.scene = scene;
+    }
 
     @FXML
     private ListView<String> tableListView;
@@ -40,8 +43,42 @@ public class MainController {
     @FXML
     private MenuBar menuBar;
     public Menu tableMenu;
+    private String currentTheme = "light";
 
+    @FXML
+    private void handleExit() {
+        Platform.exit();
+        System.exit(0);
+    }
 
+    @FXML
+    private void setLightTheme() {
+        setTheme("light");
+    }
+
+    @FXML
+    private void setDarkTheme() {
+        setTheme("dark");
+    }
+
+    private void setTheme(String theme) {
+        currentTheme = theme;
+        if (scene != null) {
+            String stylesheet = Objects.requireNonNull(getClass().getResource("/styles/" + theme + ".css")).toExternalForm();
+            scene.getStylesheets().clear();
+            scene.getStylesheets().add(stylesheet);
+        }
+    }
+
+    @FXML
+    private void showAboutDialog() {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("О приложении");
+        alert.setHeaderText(null);
+        alert.setContentText("Powered by Khomcha");
+
+        alert.showAndWait();
+    }
 
     @FXML
     private void handleChooseFile(ActionEvent event) {
@@ -264,6 +301,9 @@ public class MainController {
                         tableMenu.setVisible(false);
                     } else {
                         initializePagination();
+
+                        tableView.getItems().clear();
+                        tableNameLabel.setText("");
                     }
                 } else {
                     showAlert("Ошибка при удалении таблицы.");
@@ -273,7 +313,6 @@ public class MainController {
             showAlert("Выберите таблицу для удаления.");
         }
     }
-
 
     private void showAlert(String message) {
         Platform.runLater(() -> {
@@ -317,5 +356,6 @@ public class MainController {
             showAlert("Выберите таблицу для сохранения.");
         }
     }
+
 
 }

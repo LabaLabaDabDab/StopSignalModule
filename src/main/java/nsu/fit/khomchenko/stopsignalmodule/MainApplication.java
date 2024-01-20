@@ -16,6 +16,9 @@ public class MainApplication extends Application {
 
         Scene scene = new Scene(root);
 
+        MainController controller = fxmlLoader.getController();
+        controller.setScene(scene);
+
         primaryStage.setScene(scene);
 
         primaryStage.setMaximized(true);
@@ -23,6 +26,7 @@ public class MainApplication extends Application {
         primaryStage.setTitle("StopSignalModule");
         primaryStage.show();
     }
+
 
     public static void main(String[] args) {
         launch();
