@@ -14,6 +14,8 @@
 <?import javafx.scene.layout.VBox?>
 
 
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Button?>
 <BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="nsu.fit.khomchenko.stopsignalmodule.MainController">
     <top>
         <MenuBar fx:id="menuBar" VBox.vgrow="NEVER">
@@ -21,10 +23,7 @@
                 <Menu mnemonicParsing="false" text="Файл">
                     <items>
                         <MenuItem mnemonicParsing="false" onAction="#handleChooseFile" text="Добавить новый файл" />
-                        <MenuItem mnemonicParsing="false" onAction="#handleOpenTables" text="Открыть загруженные файлы" />
-                        <SeparatorMenuItem mnemonicParsing="false" />
-                        <MenuItem mnemonicParsing="false" text="Закрыть" />
-                        <MenuItem mnemonicParsing="false" text="Откатить" />
+                        <MenuItem mnemonicParsing="false" onAction="#handleOpenTables" text="Открыть загруженные файлы" fx:id="openTablesMenuItem"/>
                         <SeparatorMenuItem mnemonicParsing="false" />
                         <Menu mnemonicParsing="false" text="Настройки">
                             <items>
@@ -36,6 +35,7 @@
                                 </Menu>
                             </items>
                         </Menu>
+                        <MenuItem mnemonicParsing="false" onAction="#handleClose" text="Закрыть" fx:id="closeMenuItem" visible="false"/>
                         <SeparatorMenuItem mnemonicParsing="false" />
                         <MenuItem mnemonicParsing="false" onAction="#handleExit" text="Выход" />
                     </items>
@@ -46,7 +46,7 @@
                     </items>
                 </Menu>
             </menus>
-            <Menu mnemonicParsing="false" text="Таблица" fx:id="tableMenu"  visible="false">
+            <Menu mnemonicParsing="false" text="Таблица" fx:id="tableMenu" visible="false">
                 <items>
                     <MenuItem mnemonicParsing="false" onAction="#handleSaveAs" text="Сохранить как..." />
                     <MenuItem mnemonicParsing="false" onAction="#handleDeleteTable" text="Удалить текущую таблицу" />
@@ -55,7 +55,13 @@
         </MenuBar>
     </top>
     <center>
-        <VBox VBox.vgrow="ALWAYS">
+        <VBox VBox.vgrow="ALWAYS" alignment="CENTER">
+            <HBox spacing="10">
+                <ComboBox fx:id="testTypeComboBox" promptText="Выберите тип тестирования">
+                </ComboBox>
+                <Button text="Настройки" />
+                <Button text="Начать" />
+            </HBox>
             <HBox HBox.hgrow="ALWAYS">
                 <VBox VBox.vgrow="ALWAYS">
                     <TextField fx:id="searchField" onKeyReleased="#handleSearch" promptText="Поиск..." />

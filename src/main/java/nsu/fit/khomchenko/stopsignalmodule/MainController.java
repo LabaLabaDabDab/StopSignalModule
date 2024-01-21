@@ -43,7 +43,10 @@ public class MainController {
     @FXML
     private MenuBar menuBar;
     public Menu tableMenu;
-    private String currentTheme = "light";
+    @FXML
+    private MenuItem closeMenuItem;
+    @FXML
+    private MenuItem openTablesMenuItem;
 
     @FXML
     private void handleExit() {
@@ -62,7 +65,6 @@ public class MainController {
     }
 
     private void setTheme(String theme) {
-        currentTheme = theme;
         if (scene != null) {
             String stylesheet = Objects.requireNonNull(getClass().getResource("/styles/" + theme + ".css")).toExternalForm();
             scene.getStylesheets().clear();
@@ -185,8 +187,6 @@ public class MainController {
         tableListView.setItems(FXCollections.observableArrayList(displayedTables));
     }
 
-
-
     private void initializePagination() {
         if (allTables != null && tableListView != null) {
             int pageCount = (int) Math.ceil((double) allTables.size() / itemsPerPage);
@@ -215,6 +215,8 @@ public class MainController {
         if (pagination != null) {
             initializePagination();
         }
+
+        closeMenuItem.setVisible(true);
     }
 
 
@@ -230,7 +232,15 @@ public class MainController {
                 handleTableDoubleClick();
             }
         });
+
+        closeMenuItem.setOnAction(event -> handleClose());
     }
+
+    private void updateOpenTablesMenuItemVisibility() {
+        boolean isTableListVisible = tableListView.isVisible();
+        openTablesMenuItem.setVisible(!isTableListVisible);
+    }
+
 
     @FXML
     private void handleTableDoubleClick() {
@@ -357,5 +367,15 @@ public class MainController {
         }
     }
 
+    @FXML
+    private void handleClose() {
+        tableListView.setVisible(false);
+        tableView.setVisible(false);
+        tableNameLabel.setVisible(false);
+        pagination.setVisible(false);
+        searchField.setVisible(false);
+        closeMenuItem.setVisible(false);
+        tableMenu.setVisible(false);
+    }
 
 }
