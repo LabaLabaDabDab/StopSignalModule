@@ -93,16 +93,37 @@ public class MainController {
         File selectedFile = fileChooser.showOpenDialog(null);
 
         if (selectedFile != null) {
-            if (USE_CONSOLE_INTERFACE) {
-                handleConsoleInterface(selectedFile);
-            } else {
-                handleDialogInterface(selectedFile);
+            DatabaseSchema selectedSchema = showSchemaSelectionDialog();
+            if (selectedSchema != null) {
+                handleDialogInterface(selectedFile, selectedSchema);
                 allTables = FXCollections.observableArrayList(DatabaseHandler.getAllTables());
                 initializePagination();
             }
         }
     }
 
+    private DatabaseSchema showSchemaSelectionDialog() {
+        List<String> schemaNames = Arrays.stream(DatabaseSchema.values())
+                .map(DatabaseSchema::getDisplayName)
+                .collect(Collectors.toList());
+
+        ChoiceDialog<String> schemaDialog = new ChoiceDialog<>(schemaNames.get(0), schemaNames);
+        schemaDialog.setTitle("Выбор схемы");
+        schemaDialog.setHeaderText("Выберите схему для добавления таблицы:");
+        schemaDialog.setContentText("Схема:");
+
+        Optional<String> selectedSchemaName = schemaDialog.showAndWait();
+        return selectedSchemaName.map(this::getSchemaByName).orElse(null);
+    }
+
+    private DatabaseSchema getSchemaByName(String displayName) {
+        return Arrays.stream(DatabaseSchema.values())
+                .filter(schema -> schema.getDisplayName().equals(displayName))
+                .findFirst()
+                .orElse(DatabaseSchema.STOP_SIGNAL);
+    }
+
+    /*
     private void handleConsoleInterface(File selectedFile) {
         Scanner scanner = new Scanner(System.in);
 
@@ -126,7 +147,9 @@ public class MainController {
         DatabaseHandler.loadAndSaveData(filePath, tableName);
     }
 
-    private void handleDialogInterface(File selectedFile) {
+     */
+
+    private void handleDialogInterface(File selectedFile, DatabaseSchema selectedSchema) {
         TextInputDialog tableNameDialog = new TextInputDialog();
         tableNameDialog.setTitle("Название таблицы");
         tableNameDialog.setHeaderText("Введите базовое название таблицы:");
@@ -159,9 +182,10 @@ public class MainController {
         }
 
         String tableName = baseTableName + "_" + gender + "_" + age;
+        String schemaName = selectedSchema.getSchemaName();
 
         String filePath = selectedFile.getAbsolutePath();
-        DatabaseHandler.loadAndSaveData(filePath, tableName);
+        DatabaseHandler.loadAndSaveData(filePath, tableName, schemaName);
     }
 
     private void showAlert() {
@@ -377,5 +401,4 @@ public class MainController {
         closeMenuItem.setVisible(false);
         tableMenu.setVisible(false);
     }
-
 }

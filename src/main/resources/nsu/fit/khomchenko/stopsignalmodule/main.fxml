@@ -55,15 +55,10 @@
         </MenuBar>
     </top>
     <center>
-        <VBox VBox.vgrow="ALWAYS" alignment="CENTER">
-            <HBox spacing="10">
-                <ComboBox fx:id="testTypeComboBox" promptText="Выберите тип тестирования">
-                </ComboBox>
-                <Button text="Настройки" />
-                <Button text="Начать" />
-            </HBox>
+        <VBox VBox.vgrow="ALWAYS" alignment="TOP_CENTER">
             <HBox HBox.hgrow="ALWAYS">
                 <VBox VBox.vgrow="ALWAYS">
+                    <Button  text="Выбрать схему" HBox.hgrow="ALWAYS" VBox.vgrow="ALWAYS"  visible="false"/>
                     <TextField fx:id="searchField" onKeyReleased="#handleSearch" promptText="Поиск..." />
                     <Pagination fx:id="pagination" HBox.hgrow="ALWAYS" VBox.vgrow="ALWAYS" />
                     <ListView fx:id="tableListView" HBox.hgrow="ALWAYS" VBox.vgrow="ALWAYS" />

@@ -28,30 +28,57 @@ public class DatabaseHandler {
         }
     }
 
-    public static void loadAndSaveData(String filePath, String tableName) {
+    public static Connection connect(String schemaName) {
+        createSchema(schemaName);
+
+        try {
+            String jdbcUrl = JDBC_URL + "?currentSchema=" + schemaName;
+            return DriverManager.getConnection(jdbcUrl, USERNAME, PASSWORD);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            System.err.println("Failed to connect to the database: " + e.getMessage());
+            return null;
+        }
+    }
+
+
+
+    public static void createSchema(String schemaName) {
+        try (Connection connection = connect()) {
+            if (connection != null) {
+                try (Statement statement = connection.createStatement()) {
+                    statement.executeUpdate("CREATE SCHEMA IF NOT EXISTS " + schemaName);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            System.err.println("SQL Exception while creating schema: " + e.getMessage());
+        }
+    }
+
+    public static void loadAndSaveData(String filePath, String tableName, String schemaName) {
         try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
             String headerLine = br.readLine();
             if (headerLine != null) {
-                createTable(tableName, headerLine);
+                createTable(tableName, headerLine, schemaName);
 
                 String line;
                 while ((line = br.readLine()) != null) {
-                    saveDataRow(tableName, line);
+                    saveDataRow(tableName, line, schemaName);
                 }
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
-
-    private static void createTable(String tableName, String headerLine) {
-        try (Connection connection = connect()) {
+    private static void createTable(String tableName, String headerLine, String schemaName) {
+        try (Connection connection = connect(schemaName)) {
             assert connection != null;
             try (Statement statement = connection.createStatement()) {
                 String[] columns = headerLine.replace(".", "_").split("\t");
 
                 StringBuilder createTableQuery = new StringBuilder("CREATE TABLE IF NOT EXISTS ");
-                createTableQuery.append(tableName).append(" (");
+                createTableQuery.append(schemaName).append(".").append(tableName).append(" (");
                 for (String column : columns) {
                     createTableQuery.append(column).append(" VARCHAR(255), ");
                 }
@@ -67,13 +94,13 @@ public class DatabaseHandler {
     }
 
 
-    private static void saveDataRow(String tableName, String dataRow) {
-        try (Connection connection = connect()) {
+    private static void saveDataRow(String tableName, String dataRow, String schemaName) {
+        try (Connection connection = connect(schemaName)) {
             if (connection != null) {
                 try {
                     String[] values = dataRow.split("\t");
 
-                    StringBuilder sql = new StringBuilder("INSERT INTO " + tableName + " VALUES (");
+                    StringBuilder sql = new StringBuilder("INSERT INTO " + schemaName + "." + tableName + " VALUES (");
                     for (int i = 0; i < values.length; i++) {
                         sql.append("?, ");
                     }
