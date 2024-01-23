@@ -41,8 +41,6 @@ public class DatabaseHandler {
         }
     }
 
-
-
     public static void createSchema(String schemaName) {
         try (Connection connection = connect()) {
             if (connection != null) {
@@ -122,13 +120,14 @@ public class DatabaseHandler {
         }
     }
 
-    public static List<String> getAllTables() {
+    public static List<String> getAllTables(DatabaseSchema schema) {
         List<String> tableNames = new ArrayList<>();
 
-        try (Connection connection = connect()) {
+        try (Connection connection = connect(schema.getSchemaName())) {
             if (connection != null) {
                 DatabaseMetaData metaData = connection.getMetaData();
-                ResultSet resultSet = metaData.getTables(null, null, "%", new String[]{"TABLE"});
+
+                ResultSet resultSet = metaData.getTables(null, schema.getSchemaName(), "%", new String[]{"TABLE"});
 
                 while (resultSet.next()) {
                     String tableName = resultSet.getString("TABLE_NAME");
@@ -142,10 +141,10 @@ public class DatabaseHandler {
         return tableNames;
     }
 
-    public static List<String[]> getDataForTable(String tableName) {
+    public static List<String[]> getDataForTable(DatabaseSchema schema, String tableName) {
         List<String[]> tableData = new ArrayList<>();
 
-        try (Connection connection = connect()) {
+        try (Connection connection = connect(schema.getSchemaName())) {
             if (connection != null) {
                 try (Statement statement = connection.createStatement()) {
                     ResultSet resultSet = statement.executeQuery("SELECT * FROM " + tableName);
@@ -170,13 +169,14 @@ public class DatabaseHandler {
         return tableData;
     }
 
-    public static List<String> getColumnNames(String tableName) {
+    public static List<String> getColumnNames(DatabaseSchema schema, String tableName) {
         List<String> columnNames = new ArrayList<>();
 
-        try (Connection connection = connect()) {
+        try (Connection connection = connect(schema.getSchemaName())) {
             if (connection != null) {
                 DatabaseMetaData metaData = connection.getMetaData();
-                ResultSet resultSet = metaData.getColumns(null, null, tableName, null);
+
+                ResultSet resultSet = metaData.getColumns(null, schema.getSchemaName(), tableName, null);
 
                 while (resultSet.next()) {
                     String columnName = resultSet.getString("COLUMN_NAME");
@@ -190,8 +190,8 @@ public class DatabaseHandler {
         return columnNames;
     }
 
-    public static boolean deleteTable(String tableName) {
-        try (Connection connection = connect()) {
+    public static boolean deleteTable(DatabaseSchema schema, String tableName) {
+        try (Connection connection = connect(schema.getSchemaName())) {
             if (connection != null) {
                 try (Statement statement = connection.createStatement()) {
                     statement.executeUpdate("DROP TABLE IF EXISTS " + tableName);
@@ -204,9 +204,9 @@ public class DatabaseHandler {
         return false;
     }
 
-    public static boolean saveTableAs(String tableName, File file, String format) {
-        List<String[]> tableData = getDataForTable(tableName);
-        List<String> columnNames = getColumnNames(tableName);
+    public static boolean saveTableAs(DatabaseSchema schema, String tableName, File file, String format) {
+        List<String[]> tableData = getDataForTable(schema, tableName);
+        List<String> columnNames = getColumnNames(schema, tableName);
 
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
             switch (format.toLowerCase()) {

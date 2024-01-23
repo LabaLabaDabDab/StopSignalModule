@@ -16,6 +16,8 @@ import java.util.stream.Collectors;
 
 public class MainController {
     private static final boolean USE_CONSOLE_INTERFACE = false;
+    @FXML
+    public Label schemaLabel;
     private Scene scene;
 
     public void setScene(Scene scene) {
@@ -47,6 +49,9 @@ public class MainController {
     private MenuItem closeMenuItem;
     @FXML
     private MenuItem openTablesMenuItem;
+
+    @FXML
+    private ComboBox<DatabaseSchema> schemaComboBox;
 
     @FXML
     private void handleExit() {
@@ -96,7 +101,8 @@ public class MainController {
             DatabaseSchema selectedSchema = showSchemaSelectionDialog();
             if (selectedSchema != null) {
                 handleDialogInterface(selectedFile, selectedSchema);
-                allTables = FXCollections.observableArrayList(DatabaseHandler.getAllTables());
+
+                allTables = FXCollections.observableArrayList(DatabaseHandler.getAllTables(selectedSchema));
                 initializePagination();
             }
         }
@@ -222,7 +228,6 @@ public class MainController {
         }
     }
 
-
     @FXML
     private void handleSearch() {
         initializePagination();
@@ -233,8 +238,12 @@ public class MainController {
         tableListView.setVisible(true);
         pagination.setVisible(true);
         searchField.setVisible(true);
+        schemaComboBox.setVisible(true);
+        schemaLabel.setVisible(true);
 
-        allTables = FXCollections.observableArrayList(DatabaseHandler.getAllTables());
+        DatabaseSchema selectedSchema = schemaComboBox.getValue();
+
+        allTables = FXCollections.observableArrayList(DatabaseHandler.getAllTables(selectedSchema));
 
         if (pagination != null) {
             initializePagination();
@@ -243,7 +252,6 @@ public class MainController {
         closeMenuItem.setVisible(true);
     }
 
-
     @FXML
     private void initialize() {
         tableListView.setVisible(false);
@@ -251,6 +259,15 @@ public class MainController {
         tableNameLabel.setVisible(false);
         pagination.setVisible(false);
         searchField.setVisible(false);
+        schemaComboBox.setVisible(false);
+        schemaLabel.setVisible(false);
+
+        List<DatabaseSchema> schemaList = Arrays.asList(DatabaseSchema.values());
+        schemaComboBox.getItems().addAll(schemaList);
+
+        schemaComboBox.setValue(DatabaseSchema.STOP_SIGNAL);
+        schemaComboBox.setOnAction(event -> handleSchemaSelection());
+
         tableListView.setOnMouseClicked(event -> {
             if (event.getClickCount() == 2) {
                 handleTableDoubleClick();
@@ -258,11 +275,6 @@ public class MainController {
         });
 
         closeMenuItem.setOnAction(event -> handleClose());
-    }
-
-    private void updateOpenTablesMenuItemVisibility() {
-        boolean isTableListVisible = tableListView.isVisible();
-        openTablesMenuItem.setVisible(!isTableListVisible);
     }
 
 
@@ -273,9 +285,9 @@ public class MainController {
         if (selectedTable != null) {
             System.out.println("Выбрана таблица: " + selectedTable);
 
-            List<String[]> tableData = DatabaseHandler.getDataForTable(selectedTable);
+            List<String[]> tableData = DatabaseHandler.getDataForTable(schemaComboBox.getValue(), selectedTable);
 
-            List<String> columnNames = DatabaseHandler.getColumnNames(selectedTable);
+            List<String> columnNames = DatabaseHandler.getColumnNames(schemaComboBox.getValue(), selectedTable);
             tableView.getColumns().clear();
             for (int i = 0; i < columnNames.size(); i++) {
                 final int columnIndex = i;
@@ -317,15 +329,16 @@ public class MainController {
 
             Optional<ButtonType> result = alert.showAndWait();
             if (result.isPresent() && result.get() == ButtonType.OK) {
-                boolean success = DatabaseHandler.deleteTable(selectedTable);
+                boolean success = DatabaseHandler.deleteTable(schemaComboBox.getValue(), selectedTable);
                 if (success) {
                     showAlert("Таблица успешно удалена.");
 
-                    allTables = FXCollections.observableArrayList(DatabaseHandler.getAllTables());
+                    allTables = FXCollections.observableArrayList(DatabaseHandler.getAllTables(schemaComboBox.getValue()));
 
                     if (allTables.isEmpty()) {
                         tableListView.setVisible(false);
                         pagination.setVisible(false);
+                        schemaLabel.setVisible(false);
                         searchField.setVisible(false);
 
                         tableView.setVisible(false);
@@ -378,7 +391,7 @@ public class MainController {
                 File file = fileChooser.showSaveDialog(null);
 
                 if (file != null) {
-                    boolean success = DatabaseHandler.saveTableAs(selectedTable, file, selectedFormat);
+                    boolean success = DatabaseHandler.saveTableAs(schemaComboBox.getValue(), selectedTable, file, selectedFormat);
                     if (success) {
                         showAlert("Таблица успешно сохранена.");
                     } else {
@@ -400,5 +413,16 @@ public class MainController {
         searchField.setVisible(false);
         closeMenuItem.setVisible(false);
         tableMenu.setVisible(false);
+        schemaComboBox.setVisible(false);
+        schemaLabel.setVisible(false);
+    }
+
+    @FXML
+    private void handleSchemaSelection() {
+        DatabaseSchema selectedSchema = schemaComboBox.getValue();
+        if (selectedSchema != null) {
+            allTables = FXCollections.observableArrayList(DatabaseHandler.getAllTables(selectedSchema));
+            initializePagination();
+        }
     }
 }
