@@ -8,6 +8,7 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.input.KeyEvent;
 import javafx.stage.FileChooser;
 
 import java.io.File;
@@ -16,8 +17,10 @@ import java.util.stream.Collectors;
 
 public class MainController {
     private static final boolean USE_CONSOLE_INTERFACE = false;
+
     @FXML
     public Label schemaLabel;
+
     private Scene scene;
 
     public void setScene(Scene scene) {
@@ -27,8 +30,8 @@ public class MainController {
     @FXML
     private ListView<String> tableListView;
 
-    @FXML
-    private Pagination pagination;
+    //@FXML
+    //private Pagination pagination;
 
     @FXML
     private TextField searchField;
@@ -40,13 +43,16 @@ public class MainController {
     @FXML
     private Label tableNameLabel;
 
-    private final int itemsPerPage = 10;
+    //private final int itemsPerPage = 10;
 
     @FXML
     private MenuBar menuBar;
+
     public Menu tableMenu;
+
     @FXML
     private MenuItem closeMenuItem;
+
     @FXML
     private MenuItem openTablesMenuItem;
 
@@ -103,9 +109,14 @@ public class MainController {
                 handleDialogInterface(selectedFile, selectedSchema);
 
                 allTables = FXCollections.observableArrayList(DatabaseHandler.getAllTables(selectedSchema));
-                initializePagination();
+                showTableList(searchField.getText());
             }
         }
+    }
+
+    @FXML
+    private void handleSearch(KeyEvent event) {
+        showTableList(searchField.getText());
     }
 
     private DatabaseSchema showSchemaSelectionDialog() {
@@ -203,11 +214,8 @@ public class MainController {
         });
     }
 
-    private void showTableList(int pageIndex, String searchQuery) {
-        int fromIndex = pageIndex * itemsPerPage;
-        int toIndex = Math.min(fromIndex + itemsPerPage, allTables.size());
-
-        List<String> displayedTables = allTables.subList(fromIndex, toIndex);
+    private void showTableList(String searchQuery) {
+        List<String> displayedTables = allTables;
         if (searchQuery != null && !searchQuery.isEmpty()) {
             displayedTables = displayedTables.stream()
                     .filter(tableName -> tableName.toLowerCase().contains(searchQuery.toLowerCase()))
@@ -217,26 +225,9 @@ public class MainController {
         tableListView.setItems(FXCollections.observableArrayList(displayedTables));
     }
 
-    private void initializePagination() {
-        if (allTables != null && tableListView != null) {
-            int pageCount = (int) Math.ceil((double) allTables.size() / itemsPerPage);
-            pagination.setPageCount(pageCount);
-            pagination.setPageFactory(pageIndex -> {
-                showTableList(pageIndex, searchField.getText());
-                return tableListView;
-            });
-        }
-    }
-
-    @FXML
-    private void handleSearch() {
-        initializePagination();
-    }
-
     @FXML
     private void handleOpenTables(ActionEvent event) {
         tableListView.setVisible(true);
-        pagination.setVisible(true);
         searchField.setVisible(true);
         schemaComboBox.setVisible(true);
         schemaLabel.setVisible(true);
@@ -245,9 +236,7 @@ public class MainController {
 
         allTables = FXCollections.observableArrayList(DatabaseHandler.getAllTables(selectedSchema));
 
-        if (pagination != null) {
-            initializePagination();
-        }
+        showTableList(searchField.getText());
 
         closeMenuItem.setVisible(true);
     }
@@ -257,7 +246,6 @@ public class MainController {
         tableListView.setVisible(false);
         tableView.setVisible(false);
         tableNameLabel.setVisible(false);
-        pagination.setVisible(false);
         searchField.setVisible(false);
         schemaComboBox.setVisible(false);
         schemaLabel.setVisible(false);
@@ -337,7 +325,6 @@ public class MainController {
 
                     if (allTables.isEmpty()) {
                         tableListView.setVisible(false);
-                        pagination.setVisible(false);
                         schemaLabel.setVisible(false);
                         searchField.setVisible(false);
 
@@ -347,7 +334,7 @@ public class MainController {
                         Menu tableMenu = menuBar.getMenus().get(2);
                         tableMenu.setVisible(false);
                     } else {
-                        initializePagination();
+                        showTableList(searchField.getText());
 
                         tableView.getItems().clear();
                         tableNameLabel.setText("");
@@ -409,7 +396,6 @@ public class MainController {
         tableListView.setVisible(false);
         tableView.setVisible(false);
         tableNameLabel.setVisible(false);
-        pagination.setVisible(false);
         searchField.setVisible(false);
         closeMenuItem.setVisible(false);
         tableMenu.setVisible(false);
@@ -422,7 +408,7 @@ public class MainController {
         DatabaseSchema selectedSchema = schemaComboBox.getValue();
         if (selectedSchema != null) {
             allTables = FXCollections.observableArrayList(DatabaseHandler.getAllTables(selectedSchema));
-            initializePagination();
+            showTableList(searchField.getText());
         }
     }
 }
