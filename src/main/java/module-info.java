@@ -7,4 +7,6 @@ module nsu.fit.khomchenko.stopsignalmodule {
 
     opens nsu.fit.khomchenko.stopsignalmodule to javafx.fxml;
     exports nsu.fit.khomchenko.stopsignalmodule;
+    exports nsu.fit.khomchenko.stopsignalmodule.controllers;
+    opens nsu.fit.khomchenko.stopsignalmodule.controllers to javafx.fxml;
 }
