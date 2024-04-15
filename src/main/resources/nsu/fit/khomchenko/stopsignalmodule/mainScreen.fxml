@@ -7,7 +7,7 @@
 <?import javafx.scene.control.Button?>
 
 
-<VBox alignment="CENTER" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"  fx:controller="nsu.fit.khomchenko.stopsignalmodule.controllers.MainScreenController">
+<VBox alignment="CENTER" xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1"  fx:controller="nsu.fit.khomchenko.stopsignalmodule.controllers.MainScreenController">
     <StackPane>
         <VBox alignment="CENTER" spacing="10">
             <Label fx:id="schemaChoiceLabel" style="-fx-font-size: 25px; -fx-font-weight: bold;" text="Выбор схемы:" />

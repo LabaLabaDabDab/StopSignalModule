@@ -6,12 +6,12 @@ import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.layout.VBox;
 import nsu.fit.khomchenko.stopsignalmodule.DatabaseHandler;
 import nsu.fit.khomchenko.stopsignalmodule.DatabaseSchema;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class TableController {
@@ -36,20 +36,25 @@ public class TableController {
     public ComboBox<DatabaseSchema> schemaComboBox;
 
     @FXML
-    public MenuController menuController;
-
-    @FXML
     public MainScreenController mainScreenController;
 
     @FXML
+    public MainController mainController;
+
+    @FXML
     public TableController tableController;
+
+    @FXML
+    public VBox VboxForList;
 
     @FXML
     public void handleSearch(KeyEvent event) {
         showTableList(searchField.getText());
     }
 
-
+    public void setMainController(MainController mainController) {
+        this.mainController = mainController;
+    }
 
     public void showTableList(String searchQuery) {
         List<String> displayedTables = allTables;
@@ -87,16 +92,16 @@ public class TableController {
             tableView.getItems().addAll(tableData);
             tableView.setVisible(true);
 
-            tableNameLabel.setText("Выбрана таблица: " + selectedTable);
+            tableNameLabel.setText("Выбран испытуемый: " + selectedTable);
             tableNameLabel.setVisible(true);
 
-            Menu tableMenu = menuController.menuBar.getMenus().get(2);
+            Menu tableMenu = mainController.menuBar.getMenus().get(2);
             tableMenu.setVisible(true);
         } else {
             tableView.setVisible(false);
             tableNameLabel.setVisible(false);
 
-            Menu tableMenu = menuController.menuBar.getMenus().get(2);
+            Menu tableMenu = mainController.menuBar.getMenus().get(2);
             tableMenu.setVisible(false);
         }
     }
@@ -109,5 +114,18 @@ public class TableController {
             showTableList(searchField.getText());
         }
     }
+    @FXML
+    private void initialize() {
+        List<DatabaseSchema> schemaList = Arrays.asList(DatabaseSchema.values());
+        schemaComboBox.getItems().addAll(schemaList);
 
+        schemaComboBox.setValue(DatabaseSchema.HUNT);
+        schemaComboBox.setOnAction(event -> handleSchemaSelection());
+
+        tableListView.setOnMouseClicked(event -> {
+            if (event.getClickCount() == 2) {
+                handleTableDoubleClick();
+            }
+        });
+    }
 }

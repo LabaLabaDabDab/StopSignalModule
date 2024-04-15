@@ -1,7 +1,10 @@
 package nsu.fit.khomchenko.stopsignalmodule;
 
 public enum DatabaseSchema {
-    STOP_SIGNAL("stop_signal", "Stop Signal");
+    HUNT("hunt", "Hunt"),
+    ODD_BALL_EASY("odd_ball_easy", "Odd Ball Easy"),
+    ODD_BALL_HARD("odd_ball_hard", "Odd Ball Hard"),
+    STROOP("stroop", "Stroop");
 
     private final String schemaName;
     private final String displayName;

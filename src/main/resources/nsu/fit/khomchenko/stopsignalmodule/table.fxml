@@ -1,25 +1,31 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-
 <?import javafx.collections.FXCollections?>
-<?import javafx.scene.control.*?>
-<?import javafx.scene.layout.*?>
-<VBox alignment="TOP_CENTER" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" VBox.vgrow="ALWAYS" xmlns="http://javafx.com/javafx/16" xmlns:fx="http://javafx.com/fxml/1" fx:controller="nsu.fit.khomchenko.stopsignalmodule.controllers.TableController">
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox alignment="TOP_CENTER" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" VBox.vgrow="ALWAYS" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="nsu.fit.khomchenko.stopsignalmodule.controllers.TableController">
     <HBox maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" HBox.hgrow="ALWAYS" VBox.vgrow="ALWAYS">
-        <VBox HBox.hgrow="NEVER" VBox.vgrow="ALWAYS">
-            <Label fx:id="schemaLabel" style="-fx-font-size: 25px; -fx-font-weight: bold;" text="Cхема:" />
-            <ComboBox fx:id="schemaComboBox" onAction="#handleSchemaSelection" prefHeight="29.0" prefWidth="247.0" promptText="Выберите схему...">
+        <VBox focusTraversable="true" HBox.hgrow="NEVER" VBox.vgrow="ALWAYS">
+            <Label fx:id="schemaLabel" style="-fx-font-size: 25px; -fx-font-weight: bold; -fx;" text="Методика тестирования:" />
+            <ComboBox fx:id="schemaComboBox" onAction="#handleSchemaSelection" prefHeight="30.0" prefWidth="314.0" promptText="Выберите схему...">
                 <items>
                     <FXCollections fx:factory="observableArrayList">
 
                     </FXCollections>
                 </items>
             </ComboBox>
-            <TextField fx:id="searchField" onKeyReleased="#handleSearch" promptText="Поиск..." />
+         <Label fx:id="schemaLabel1" style="-fx-font-size: 25px; -fx-font-weight: bold;" text="Испытуемые:" />
+            <TextField fx:id="searchField" onKeyReleased="#handleSearch" prefHeight="2.0" prefWidth="314.0" promptText="Поиск..." />
             <ListView fx:id="tableListView" maxHeight="1.7976931348623157E308" VBox.vgrow="ALWAYS" />
         </VBox>
         <VBox HBox.hgrow="ALWAYS" VBox.vgrow="ALWAYS">
-            <Label fx:id="tableNameLabel" style="-fx-font-size: 25px; -fx-font-weight: bold;" text="Название таблицы" />
+            <Label fx:id="tableNameLabel" style="-fx-font-size: 25px; -fx-font-weight: bold;" text="Данные испытумоего:" />
             <TableView fx:id="tableView" VBox.vgrow="ALWAYS">
                 <columnResizePolicy>
                     <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
