@@ -5,8 +5,10 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
+import nsu.fit.khomchenko.stopsignalmodule.controllers.MainController;
 
 import java.io.IOException;
+import java.util.Objects;
 
 public class MainApplication extends Application {
     @Override
@@ -23,10 +25,9 @@ public class MainApplication extends Application {
 
         primaryStage.setMaximized(true);
 
-        primaryStage.setTitle("StopSignalModule");
+        primaryStage.setTitle("TestModule");
         primaryStage.show();
     }
-
 
     public static void main(String[] args) {
         launch();

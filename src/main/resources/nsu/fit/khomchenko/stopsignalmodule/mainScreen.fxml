@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Button?>
+
+
+<VBox alignment="CENTER" xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1"  fx:controller="nsu.fit.khomchenko.stopsignalmodule.controllers.MainScreenController">
+    <StackPane>
+        <VBox alignment="CENTER" spacing="10">
+            <Label fx:id="schemaChoiceLabel" style="-fx-font-size: 25px; -fx-font-weight: bold;" text="Выбор схемы:" />
+            <ComboBox fx:id="schemaChoiceComboBox" onAction="#handleSchemaChoiceComboBoxAction" promptText="Выберите схему..." />
+            <Button fx:id="startButton" prefHeight="30.0" prefWidth="160.0" text="Начать" onAction="#handleStartButtonAction" />
+        </VBox>
+    </StackPane>
+</VBox>

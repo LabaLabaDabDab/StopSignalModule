@@ -1,3 +1,9 @@
 .root {
     -fx-background-color: #ffffff;
 }
+
+#VboxForList {
+    -fx-border-color: black; /* Цвет окантовки */
+    -fx-border-width: 2px; /* Ширина окантовки */
+    -fx-background-color: lightgray; /* Цвет заднего фона */
+}
