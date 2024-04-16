@@ -5,8 +5,12 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
+import javafx.scene.effect.DropShadow;
+import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
 import nsu.fit.khomchenko.stopsignalmodule.DatabaseHandler;
 import nsu.fit.khomchenko.stopsignalmodule.DatabaseSchema;
 
@@ -48,6 +52,14 @@ public class TableController {
     public VBox VboxForList;
 
     @FXML
+    public Label testSubjectsLabel;
+
+    @FXML
+    public Button statisticButton;
+    @FXML
+    public ImageView refreshButton;
+
+    @FXML
     public void handleSearch(KeyEvent event) {
         showTableList(searchField.getText());
     }
@@ -64,8 +76,13 @@ public class TableController {
                     .collect(Collectors.toList());
         }
 
+        displayedTables = displayedTables.stream()
+                .filter(tableName -> !tableName.equals("summary_table"))
+                .collect(Collectors.toList());
+
         tableListView.setItems(FXCollections.observableArrayList(displayedTables));
     }
+
 
     @FXML
     public void handleTableDoubleClick() {
@@ -97,6 +114,8 @@ public class TableController {
 
             Menu tableMenu = mainController.menuBar.getMenus().get(2);
             tableMenu.setVisible(true);
+
+            refreshButton.setVisible(true);
         } else {
             tableView.setVisible(false);
             tableNameLabel.setVisible(false);
@@ -114,13 +133,87 @@ public class TableController {
             showTableList(searchField.getText());
         }
     }
+
+    private void displayTableData(DatabaseSchema schema, String tableName) {
+        if (schema != null && tableName != null) {
+            List<String[]> tableData = DatabaseHandler.getDataForTable(schema, tableName);
+
+            List<String> columnNames = DatabaseHandler.getColumnNames(schema, tableName);
+            tableView.getColumns().clear();
+            for (int i = 0; i < columnNames.size(); i++) {
+                final int columnIndex = i;
+                TableColumn<String[], String> column = new TableColumn<>(columnNames.get(i));
+                column.setCellValueFactory(cellData -> {
+                    String[] row = cellData.getValue();
+                    return new SimpleStringProperty(row[columnIndex]);
+                });
+                tableView.getColumns().add(column);
+            }
+
+            tableView.getItems().clear();
+            tableView.getItems().addAll(tableData);
+            tableView.setVisible(true);
+
+            if (tableName.equals("summary_table")) {
+                tableNameLabel.setText("Общая статистика испытуемых для : " + schema);
+            } else {
+                tableNameLabel.setText("Выбран испытуемый: " + tableName);
+            }
+            tableNameLabel.setVisible(true);
+
+            Menu tableMenu = mainController.menuBar.getMenus().get(2);
+            tableMenu.setVisible(true);
+        } else {
+            tableView.setVisible(false);
+            tableNameLabel.setVisible(false);
+        }
+    }
+
+    @FXML
+    public void showSummaryTable() {
+        DatabaseSchema selectedSchema = schemaComboBox.getValue();
+        displayTableData(selectedSchema, "summary_table");
+        refreshButton.setVisible(true);
+
+        Menu tableMenu = mainController.menuBar.getMenus().get(2);
+        tableMenu.setVisible(false);
+    }
+
+
+
+    @FXML
+    public void handleRefreshButtonHover(MouseEvent event) {
+        refreshButton.setEffect(new DropShadow(10.0, Color.BLACK));
+    }
+
+    @FXML
+    public void handleRefreshButtonExit(MouseEvent event) {
+        refreshButton.setEffect(null);
+    }
+
+    @FXML
+    public void handleRefreshButtonClick(MouseEvent event) {
+        refreshButton.setEffect(null);
+        DatabaseSchema selectedSchema = schemaComboBox.getValue();
+        String selectedTable = tableListView.getSelectionModel().getSelectedItem();
+        if (selectedTable != null) {
+            displayTableData(selectedSchema, selectedTable);
+        } else {
+            showSummaryTable();
+        }
+    }
+
     @FXML
     private void initialize() {
         List<DatabaseSchema> schemaList = Arrays.asList(DatabaseSchema.values());
+        refreshButton.setVisible(false);
+
         schemaComboBox.getItems().addAll(schemaList);
 
         schemaComboBox.setValue(DatabaseSchema.HUNT);
         schemaComboBox.setOnAction(event -> handleSchemaSelection());
+
+        statisticButton.setOnAction(event -> showSummaryTable());
 
         tableListView.setOnMouseClicked(event -> {
             if (event.getClickCount() == 2) {
