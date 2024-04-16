@@ -13,7 +13,9 @@ import javafx.stage.FileChooser;
 import nsu.fit.khomchenko.stopsignalmodule.DatabaseHandler;
 import nsu.fit.khomchenko.stopsignalmodule.DatabaseSchema;
 import nsu.fit.khomchenko.stopsignalmodule.data.HuntData;
+import nsu.fit.khomchenko.stopsignalmodule.data.OddBallData;
 import nsu.fit.khomchenko.stopsignalmodule.utils.HuntStatisticsCalculator;
+import nsu.fit.khomchenko.stopsignalmodule.utils.OddBallStatisticsCalculator;
 
 import java.io.File;
 import java.io.IOException;
@@ -334,51 +336,45 @@ public class MainController {
         }
     }
 
-    private void calculateAndCreateStatistics(String schemaName) {
-        switch (schemaName) {
-            case "hunt":
-                List<String> tableNames = DatabaseHandler.getTableNamesForSchema(schemaName);
-                for (String tableName : tableNames) {
-                    if (!tableName.equals("summary_table")) {
-                        List<HuntData> huntDataList = DatabaseHandler.getHuntDataForTable(schemaName, tableName);
-                        if (!huntDataList.isEmpty()) {
-                            String statisticsResult = HuntStatisticsCalculator.calculateStatistics(huntDataList, tableName, schemaName);
-                            System.out.println(statisticsResult);
-                        } else {
-                            System.out.println("Нет данных для таблицы " + tableName + " в схеме " + schemaName);
-                        }
+    private void calculateAndCreateStatistics(DatabaseSchema schemaName) {
+        List<String> tableNames = DatabaseHandler.getAllTables(schemaName);
+        if (tableNames.isEmpty()) {
+            System.out.println("Нет данных для схемы " + schemaName);
+            return;
+        }
+        for (String tableName : tableNames) {
+            if (tableName.equals("summary_table")) {
+                continue;
+            }
+            switch (schemaName) {
+                case HUNT -> {
+                    List<HuntData> huntDataList = DatabaseHandler.getHuntDataForTable(schemaName, tableName);
+                    if (!huntDataList.isEmpty()) {
+                        String statisticsResult = HuntStatisticsCalculator.calculateStatistics(huntDataList, tableName, schemaName);
+                        System.out.println(statisticsResult);
+                    } else {
+                        System.out.println("Нет данных для таблицы " + tableName + " в схеме " + schemaName);
                     }
                 }
-                break;
-        /*case "odd_ball_easy":
-            List<OddBallEasyData> oddBallEasyDataList = DatabaseHandler.getOddBallEasyDataForSchema(schemaName);
-            if (!oddBallEasyDataList.isEmpty()) {
-                String statisticsResult = OddBallEasyStatisticsCalculator.calculateStatistics(oddBallEasyDataList);
-                // В этом месте вы можете делать что-то с результатом статистики для схемы "odd_ball_easy"
-            } else {
-                System.out.println("Нет данных для схемы 'odd_ball_easy'");
+                /*case ODD_BALL_EASY, ODD_BALL_HARD -> {
+                    List<OddBallData> oddBallEasyDataList = DatabaseHandler.getOddBallDataForSchema(schemaName, tableName);
+                    if (!oddBallEasyDataList.isEmpty()) {
+                        String statisticsResult = OddBallStatisticsCalculator.calculateStatistics(oddBallEasyDataList, tableName, schemaName);
+                        System.out.println(statisticsResult);
+                    } else {
+                        System.out.println("Нет данных для таблицы " + tableName + " в схеме " + schemaName);
+                    }
+                }*/
+                default -> System.out.println("Неизвестная схема: " + schemaName);
             }
-            break;
-        case "odd_ball_hard":
-            List<OddBallHardData> oddBallHardDataList = DatabaseHandler.getOddBallHardDataForSchema(schemaName);
-            if (!oddBallHardDataList.isEmpty()) {
-                String statisticsResult = OddBallHardStatisticsCalculator.calculateStatistics(oddBallHardDataList);
-                // В этом месте вы можете делать что-то с результатом статистики для схемы "odd_ball_hard"
-            } else {
-                System.out.println("Нет данных для схемы 'odd_ball_hard'");
-            }
-            break;*/
-            default:
-                System.out.println("Неизвестная схема: " + schemaName);
-                break;
         }
     }
 
     public void initializeStatistic() {
-        calculateAndCreateStatistics("hunt");
-        /*calculateAndCreateStatistics("odd_ball_easy");
-        calculateAndCreateStatistics("odd_ball_hard");
-        calculateAndCreateStatistics("stroop");*/
+        calculateAndCreateStatistics(DatabaseSchema.HUNT);
+        calculateAndCreateStatistics(DatabaseSchema.ODD_BALL_EASY);
+        calculateAndCreateStatistics(DatabaseSchema.ODD_BALL_HARD);
+        calculateAndCreateStatistics(DatabaseSchema.STROOP);
     }
 
     @FXML

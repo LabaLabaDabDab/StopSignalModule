@@ -2,6 +2,7 @@ package nsu.fit.khomchenko.stopsignalmodule.utils;
 
 import lombok.Data;
 import nsu.fit.khomchenko.stopsignalmodule.DatabaseHandler;
+import nsu.fit.khomchenko.stopsignalmodule.DatabaseSchema;
 import nsu.fit.khomchenko.stopsignalmodule.data.HuntData;
 
 import java.util.List;
@@ -9,7 +10,7 @@ import java.util.stream.Collectors;
 
 
 public class HuntStatisticsCalculator {
-    public static String calculateStatistics(List<HuntData> tableData, String tableName, String schemaName) {
+    public static String calculateStatistics(List<HuntData> tableData, String tableName, DatabaseSchema schemaName) {
         double successfulStopsPercentage = calculateSuccessfulStopsPercentage(tableData);
         double missedPresses = countMissedPresses(tableData);
         double incorrectPresses = countIncorrectPresses(tableData);
