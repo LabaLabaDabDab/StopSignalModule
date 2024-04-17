@@ -3,31 +3,31 @@ package nsu.fit.khomchenko.stopsignalmodule.controllers;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Button;
-import javafx.scene.control.ComboBox;
-import javafx.scene.control.Label;
-import javafx.stage.Stage;
+import javafx.scene.control.*;
+import javafx.stage.FileChooser;
+import nsu.fit.khomchenko.stopsignalmodule.DatabaseHandler;
 import nsu.fit.khomchenko.stopsignalmodule.DatabaseSchema;
+import nsu.fit.khomchenko.stopsignalmodule.data.HuntData;
+import nsu.fit.khomchenko.stopsignalmodule.data.OddBallData;
+import nsu.fit.khomchenko.stopsignalmodule.utils.HuntStatisticsCalculator;
+import nsu.fit.khomchenko.stopsignalmodule.utils.OddBallStatisticsCalculator;
 
-import java.io.IOException;
+import java.io.File;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 public class MainScreenController {
     @FXML
     public Label schemaChoiceLabel;
 
     @FXML
-    public Button startButton;
-
-    @FXML
     public ComboBox<DatabaseSchema> schemaChoiceComboBox;
     @FXML
-    public MainController mainController;
+    private MainController mainController;
+
+    @FXML
+    public Button startButton;
 
     @FXML
     private MainScreenController mainScreenController;
@@ -44,43 +44,101 @@ public class MainScreenController {
     }
 
     @FXML
+    public void handleSchemaChoiceComboBoxAction() {
+        DatabaseSchema selectedSchema = schemaChoiceComboBox.getValue();
+
+        if (selectedSchema != null) {
+            System.out.println("Выбрана новая схема: " + selectedSchema.getDisplayName());
+        }
+    }
+
+    private String handleDialogTestInterface(File selectedFile, DatabaseSchema selectedSchema) {
+        TextInputDialog tableNameDialog = new TextInputDialog();
+        tableNameDialog.setTitle("Испытуемый");
+        tableNameDialog.setHeaderText("Введите имя испытуемого:");
+
+        Optional<String> testPerson = tableNameDialog.showAndWait();
+        String baseTableName = testPerson.orElse("").trim();
+
+        String[] choices = {"М", "Ж"};
+        ChoiceDialog<String> genderDialog = new ChoiceDialog<>("М", Arrays.asList(choices));
+        genderDialog.setTitle("Пол");
+        genderDialog.setHeaderText("Выберите пол (М/Ж):");
+        genderDialog.setContentText("Пол:");
+
+        Optional<String> genderResult = genderDialog.showAndWait();
+        String gender = genderResult.orElse("");
+
+        TextInputDialog ageDialog = new TextInputDialog();
+        ageDialog.setTitle("Возраст");
+        ageDialog.setHeaderText("Введите возраст (0-120):");
+        ageDialog.setContentText("Возраст:");
+
+        Optional<String> ageResult = ageDialog.showAndWait();
+        int age = ageResult.map(Integer::parseInt).orElse(-1);
+
+        if (baseTableName.isEmpty() || !Arrays.asList(choices).contains(gender) || age < 0 || age > 120) {
+            return baseTableName;
+        }
+
+        String tableName = baseTableName + "_" + gender + "_" + age + "_test";
+
+        String schemaName = selectedSchema.getSchemaName();
+
+        String filePath = selectedFile.getAbsolutePath();
+
+        DatabaseHandler.loadAndSaveData(filePath, tableName, schemaName);
+
+        return tableName;
+    }
+
+    @FXML
     private void handleStartButtonAction(ActionEvent actionEvent) {
         DatabaseSchema selectedSchema = schemaChoiceComboBox.getValue();
 
         if (selectedSchema != null) {
             System.out.println("Выбрана схема: " + selectedSchema.getDisplayName());
 
+            handleSchemaChoiceComboBoxAction();
+
+            FileChooser fileChooser = new FileChooser();
+            fileChooser.setTitle("Выберите файл IQDAT");
+            fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Файлы IQDAT", "*.iqdat"));
+
+            File selectedFile = fileChooser.showOpenDialog(null);
+
+            if (selectedFile != null) {
+                String tableName = handleDialogTestInterface(selectedFile, selectedSchema);
+                switch (selectedSchema) {
+                    case HUNT -> {
+                        List<HuntData> huntDataList = DatabaseHandler.getHuntDataForTable(selectedSchema, tableName);
+                        if (!huntDataList.isEmpty()) {
+                            String statisticsResult = HuntStatisticsCalculator.calculateStatistics(huntDataList, tableName, selectedSchema, false);
+                            mainController.getStatisticsController().displayStatistics(statisticsResult);
+                        } else {
+                            System.out.println("Нет данных для таблицы " + tableName + " в схеме " + selectedSchema);
+                        }
+                    }
+                    case ODD_BALL_EASY, ODD_BALL_HARD -> {
+                        List<OddBallData> oddBallDataList = DatabaseHandler.getOddBallDataForSchema(selectedSchema, tableName);
+                        if (!oddBallDataList.isEmpty()) {
+                            String statisticsResult = OddBallStatisticsCalculator.calculateStatistics(oddBallDataList, tableName, selectedSchema, false);
+                            mainController.getStatisticsController().displayStatistics(statisticsResult);
+                        } else {
+                            System.out.println("Нет данных для таблицы " + tableName + " в схеме " + selectedSchema.getSchemaName());
+                        }
+                    }
+                    default -> System.out.println("Неизвестная схема: " + selectedSchema.getSchemaName());
+                }
+                mainController.closeMenuItem.setVisible(true);
+
+                mainController.switchToStatistic();
+            } else {
+                showAlert("Файл не выбран.");
+            }
+
         } else {
             showAlert("Выберите схему перед началом.");
-        }
-    }
-
-    private void openStatisticsScene(DatabaseSchema selectedSchema) {
-        try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/nsu/fit/khomchenko/stopsignalmodule/statistics.fxml"));
-            Parent root = loader.load();
-
-
-            StatisticsController statisticsController = loader.getController();
-            //statisticsController.initializeData(selectedSchema);
-
-            Scene statisticsScene = new Scene(root);
-            Stage statisticsStage = new Stage();
-
-            statisticsStage.setScene(statisticsScene);
-            statisticsStage.setTitle("Статистика");
-            statisticsStage.show();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    @FXML
-    private void handleSchemaChoiceComboBoxAction() {
-        DatabaseSchema selectedSchema = mainScreenController.schemaChoiceComboBox.getValue();
-
-        if (selectedSchema != null) {
-            System.out.println("Выбрана новая схема: " + selectedSchema.getDisplayName());
         }
     }
 
@@ -96,7 +154,6 @@ public class MainScreenController {
 
     @FXML
     private void initialize() {
-        mainScreenController = this;
 
         List<DatabaseSchema> schemaList = Arrays.asList(DatabaseSchema.values());
         schemaChoiceComboBox.getItems().addAll(schemaList);

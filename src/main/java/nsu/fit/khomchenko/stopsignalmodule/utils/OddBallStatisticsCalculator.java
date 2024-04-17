@@ -7,7 +7,7 @@ import nsu.fit.khomchenko.stopsignalmodule.data.OddBallData;
 import java.util.List;
 
 public class OddBallStatisticsCalculator {
-    public static String calculateStatistics(List<OddBallData> dataList, String tableName, DatabaseSchema schema) {
+    public static String calculateStatistics(List<OddBallData> dataList, String tableName, DatabaseSchema schema, boolean saveToDatabase) {
         double incorrectPressesPercentage = calculateIncorrectPressesPercentage(dataList);
         double correctPressesPercentage = calculateCorrectPressesPercentage(dataList);
         double averageReactionTime = calculateAverageReactionTime(dataList);
@@ -20,9 +20,11 @@ public class OddBallStatisticsCalculator {
         statistics.append("Average Reaction Time: ").append(averageReactionTime).append("\n");
         statistics.append("Time Dispersion: ").append(timeDispersion).append("\n");
 
-        DatabaseHandler.saveStatisticsToSummaryTable(schema, tableName,
-                0.0, 0.0, incorrectPressesPercentage, correctPressesPercentage,
-                averageReactionTime, timeDispersion);
+        if (saveToDatabase) {
+            DatabaseHandler.saveStatisticsToSummaryTable(schema, tableName,
+                    0.0, 0.0, incorrectPressesPercentage, correctPressesPercentage,
+                    averageReactionTime, timeDispersion);
+        }
 
         return statistics.toString();
     }

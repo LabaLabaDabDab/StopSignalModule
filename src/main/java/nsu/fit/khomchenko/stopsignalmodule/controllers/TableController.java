@@ -53,7 +53,6 @@ public class TableController {
 
     @FXML
     public Label testSubjectsLabel;
-
     @FXML
     public Button statisticButton;
     @FXML

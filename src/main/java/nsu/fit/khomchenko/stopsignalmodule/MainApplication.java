@@ -24,7 +24,7 @@ public class MainApplication extends Application {
 
         primaryStage.setMaximized(true);
 
-        primaryStage.setTitle("TestModule");
+        primaryStage.setTitle("SSPModule");
         primaryStage.show();
     }
 

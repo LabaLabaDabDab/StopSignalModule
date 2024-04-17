@@ -8,16 +8,16 @@
 <?import javafx.scene.control.TableView?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.effect.DropShadow?>
-<?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Pane?>
 <?import javafx.scene.layout.VBox?>
 
 <?import javafx.scene.image.Image?>
-<VBox alignment="TOP_CENTER" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" VBox.vgrow="ALWAYS" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="nsu.fit.khomchenko.stopsignalmodule.controllers.TableController">
+<?import javafx.scene.image.ImageView?>
+<VBox alignment="TOP_CENTER" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" VBox.vgrow="ALWAYS" xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1" fx:controller="nsu.fit.khomchenko.stopsignalmodule.controllers.TableController">
     <HBox maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" HBox.hgrow="ALWAYS" VBox.vgrow="ALWAYS">
         <VBox focusTraversable="true" HBox.hgrow="NEVER" VBox.vgrow="ALWAYS">
-            <Label fx:id="schemaLabel" style="-fx-font-size: 25px; -fx-font-weight: bold; -fx;" text="Методика тестирования:" />
+            <Label fx:id="schemaLabel" style="-fx-font-size: 25px; -fx-font-weight: bold;" text="Методика тестирования:" />
             <ComboBox fx:id="schemaComboBox" onAction="#handleSchemaSelection" prefHeight="30.0" prefWidth="314.0" promptText="Выберите схему...">
                 <items>
                     <FXCollections fx:factory="observableArrayList">

@@ -64,6 +64,16 @@ public class MainController {
         return borderPane;
     }
 
+    public void setMainScreenController(MainScreenController mainScreenController) {
+        this.mainScreenController = mainScreenController;
+    }
+
+
+
+    public StatisticsController getStatisticsController() {
+        return statisticsController;
+    }
+
     @FXML
     private void setLightTheme() {
         setTheme("light");
@@ -118,7 +128,7 @@ public class MainController {
     }
 
     @FXML
-    private void handleChooseFile(ActionEvent event) {
+    public void handleChooseFile(ActionEvent event) {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Выберите файл");
 
@@ -137,7 +147,7 @@ public class MainController {
         }
     }
 
-    private void handleDialogInterface(File selectedFile, DatabaseSchema selectedSchema) {
+    public void handleDialogInterface(File selectedFile, DatabaseSchema selectedSchema) {
         TextInputDialog tableNameDialog = new TextInputDialog();
         tableNameDialog.setTitle("Название таблицы");
         tableNameDialog.setHeaderText("Введите базовое название таблицы:");
@@ -294,7 +304,7 @@ public class MainController {
     }
 
     @FXML
-    private void handleOpenTables(ActionEvent event) {
+    public void handleOpenTables(ActionEvent event) {
         Parent tableContent = loadFXML("table");
         getBorderPane().setCenter(tableContent);
 
@@ -321,6 +331,11 @@ public class MainController {
         tableMenu.setVisible(false);
         Parent mainScreenContent = loadFXML("mainScreen");
         closeMenuItem.setVisible(false);
+        getBorderPane().setCenter(mainScreenContent);
+    }
+
+    public void switchToStatistic(){
+        Parent mainScreenContent = loadFXML("statistics");
         getBorderPane().setCenter(mainScreenContent);
     }
 
@@ -359,14 +374,14 @@ public class MainController {
             return;
         }
         for (String tableName : tableNames) {
-            if (tableName.equals("summary_table")) {
+            if (tableName.equals("summary_table") || tableName.endsWith("_test")) {
                 continue;
             }
             switch (schema) {
                 case HUNT -> {
                     List<HuntData> huntDataList = DatabaseHandler.getHuntDataForTable(schema, tableName);
                     if (!huntDataList.isEmpty()) {
-                        String statisticsResult = HuntStatisticsCalculator.calculateStatistics(huntDataList, tableName, schema);
+                        String statisticsResult = HuntStatisticsCalculator.calculateStatistics(huntDataList, tableName, schema, true);
                         //System.out.println(statisticsResult);
                     } else {
                         System.out.println("Нет данных для таблицы " + tableName + " в схеме " + schema);
@@ -375,7 +390,7 @@ public class MainController {
                 case ODD_BALL_EASY, ODD_BALL_HARD -> {
                     List<OddBallData> oddBallDataList = DatabaseHandler.getOddBallDataForSchema(schema, tableName);
                     if (!oddBallDataList.isEmpty()) {
-                        String statisticsResult = OddBallStatisticsCalculator.calculateStatistics(oddBallDataList, tableName, schema);
+                        String statisticsResult = OddBallStatisticsCalculator.calculateStatistics(oddBallDataList, tableName, schema, true);
                         //System.out.println(statisticsResult);
                     } else {
                         System.out.println("Нет данных для таблицы " + tableName + " в схеме " + schema.getSchemaName());

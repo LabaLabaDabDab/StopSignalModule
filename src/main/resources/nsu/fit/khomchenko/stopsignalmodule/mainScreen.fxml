@@ -1,18 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.scene.layout.VBox?>
-<?import javafx.scene.layout.StackPane?>
-<?import javafx.scene.control.Label?>
-<?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
 
-
-<VBox alignment="CENTER" xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1"  fx:controller="nsu.fit.khomchenko.stopsignalmodule.controllers.MainScreenController">
+<VBox alignment="CENTER" xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1" fx:controller="nsu.fit.khomchenko.stopsignalmodule.controllers.MainScreenController">
     <StackPane>
         <VBox alignment="CENTER" spacing="10">
-            <Label fx:id="schemaChoiceLabel" style="-fx-font-size: 25px; -fx-font-weight: bold;" text="Выбор схемы:" />
-            <ComboBox fx:id="schemaChoiceComboBox" onAction="#handleSchemaChoiceComboBoxAction" promptText="Выберите схему..." />
-            <Button fx:id="startButton" prefHeight="30.0" prefWidth="160.0" text="Начать" onAction="#handleStartButtonAction" />
+            <Label fx:id="schemaChoiceLabel" style="-fx-font-size: 25px; -fx-font-weight: bold;" text="Выбор методики тестрования:" />
+            <ComboBox fx:id="schemaChoiceComboBox" onAction="#handleSchemaChoiceComboBoxAction" prefHeight="66.0" prefWidth="376.0" style="-fx-font-size: 18px;" promptText="Выберите схему..." />
+            <Button fx:id="startButton" onAction="#handleStartButtonAction" prefHeight="63.0" prefWidth="376.0" style="-fx-font-size: 25;" text="Начать" textAlignment="CENTER" textOverrun="CLIP">
+            <font>
+               <Font size="25.0" />
+            </font></Button>
         </VBox>
     </StackPane>
 </VBox>

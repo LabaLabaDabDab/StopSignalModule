@@ -10,14 +10,13 @@ import java.util.stream.Collectors;
 
 
 public class HuntStatisticsCalculator {
-    public static String calculateStatistics(List<HuntData> tableData, String tableName, DatabaseSchema schemaName) {
+    public static String calculateStatistics(List<HuntData> tableData, String tableName, DatabaseSchema schemaName, boolean saveToDatabase) {
         double successfulStopsPercentage = calculateSuccessfulStopsPercentage(tableData);
         double missedPresses = countMissedPresses(tableData);
         double incorrectPresses = countIncorrectPresses(tableData);
         double correctPressesPercentage = calculateCorrectPressesPercentage(tableData);
         double averageLatencyForCorrectPresses = calculateAverageLatencyForCorrectPresses(tableData);
         double individualTimeDispersion = calculateIndividualTimeDispersion(tableData);
-
 
         StringBuilder statistics = new StringBuilder();
         statistics.append("Successful Stops Percentage: ").append(successfulStopsPercentage).append("%\n");
@@ -27,11 +26,12 @@ public class HuntStatisticsCalculator {
         statistics.append("Average Latency for Correct Presses: ").append(averageLatencyForCorrectPresses).append("\n");
         statistics.append("Individual Time Dispersion: ").append(individualTimeDispersion).append("\n");
 
-
-        DatabaseHandler.saveStatisticsToSummaryTable(schemaName, tableName,
-                successfulStopsPercentage, missedPresses, incorrectPresses,
-                correctPressesPercentage, averageLatencyForCorrectPresses,
-                individualTimeDispersion);
+        if (saveToDatabase) {
+            DatabaseHandler.saveStatisticsToSummaryTable(schemaName, tableName,
+                    successfulStopsPercentage, missedPresses, incorrectPresses,
+                    correctPressesPercentage, averageLatencyForCorrectPresses,
+                    individualTimeDispersion);
+        }
 
         return statistics.toString();
     }
@@ -40,7 +40,7 @@ public class HuntStatisticsCalculator {
     private static double calculateSuccessfulStopsPercentage(List<HuntData> dataList) {
         List<HuntData> filteredData = dataList.stream()
                 .filter(data -> "CRTTstop2".equals(data.getTrialcode()))
-                .collect(Collectors.toList());
+                .toList();
 
         // Подсчитываем количество успешных остановок среди отфильтрованных данных
         long successfulStopsCount = filteredData.stream()
