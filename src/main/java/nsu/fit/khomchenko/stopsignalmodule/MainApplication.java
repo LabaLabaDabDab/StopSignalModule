@@ -8,7 +8,6 @@ import javafx.stage.Stage;
 import nsu.fit.khomchenko.stopsignalmodule.controllers.MainController;
 
 import java.io.IOException;
-import java.util.Objects;
 
 public class MainApplication extends Application {
     @Override
@@ -25,7 +24,7 @@ public class MainApplication extends Application {
 
         primaryStage.setMaximized(true);
 
-        primaryStage.setTitle("TestModule");
+        primaryStage.setTitle("SSPModule");
         primaryStage.show();
     }
 

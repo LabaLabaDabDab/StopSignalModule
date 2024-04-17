@@ -3,7 +3,7 @@ package nsu.fit.khomchenko.stopsignalmodule.data;
 import lombok.Data;
 
 @Data
-public class OddBallHardData {
+public class OddBallData {
     private String date;
     private String time;
     private String subject;

@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.CheckBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox alignment="TOP_CENTER" prefHeight="400.0" prefWidth="790.0" xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1" fx:controller="nsu.fit.khomchenko.stopsignalmodule.controllers.StatisticsController">
+    <children>
+        <HBox alignment="TOP_CENTER">
+            <children>
+            <VBox prefHeight="400.0" prefWidth="615.0">
+               <children>
+                   <HBox alignment="TOP_CENTER" prefHeight="26.0" prefWidth="514.0">
+                       <CheckBox text="Мужчина" />
+                       <CheckBox text="Женщина" />
+                   </HBox>
+                   <HBox prefHeight="56.0" prefWidth="499.0">
+                       <Label prefHeight="18.0" prefWidth="199.0" text="Процент успешных торможений: " wrapText="true" />
+                       <TextField fx:id="successfulStopsLowerTextField" alignment="TOP_CENTER" promptText="Введите нижнее значение" />
+                       <TextField fx:id="successfulStopsUpperTextField" alignment="TOP_CENTER" promptText="Введите верхнее значение" />
+                   </HBox>
+   
+                   <HBox prefHeight="70.0" prefWidth="499.0">
+                       <Label prefHeight="18.0" prefWidth="200.0" text="Процент пропущенных нажатий: " wrapText="true" />
+                       <TextField fx:id="missedHitsLowerTextField" alignment="TOP_CENTER" promptText="Введите нижнее значение" />
+                       <TextField fx:id="missedHitsUpperTextField" alignment="TOP_CENTER" promptText="Введите верхнее значение" />
+                   </HBox>
+   
+                   <HBox prefHeight="46.0" prefWidth="499.0">
+                       <Label prefHeight="18.0" prefWidth="200.0" text="Процент неправильных нажатий: " wrapText="true" />
+                       <TextField fx:id="incorrectHitsLowerTextField" alignment="TOP_CENTER" promptText="Введите нижнее значение" />
+                       <TextField fx:id="incorrectHitsUpperTextField" alignment="TOP_CENTER" promptText="Введите верхнее значение" />
+                   </HBox>
+   
+                   <HBox prefHeight="45.0" prefWidth="499.0">
+                       <Label prefHeight="44.0" prefWidth="200.0" text="Процент правильных нажатий: " wrapText="true" />
+                       <TextField fx:id="correctHitsLowerTextField" alignment="TOP_CENTER" promptText="Введите нижнее значение" />
+                       <TextField fx:id="correctHitsUpperTextField" alignment="TOP_CENTER" promptText="Введите верхнее значение" />
+                   </HBox>
+   
+                   <HBox>
+                       <Label prefHeight="49.0" prefWidth="198.0" text="Среднее время для правильных нажатий: " wrapText="true" />
+                       <TextField fx:id="averageTimeLowerTextField" alignment="TOP_CENTER" prefHeight="26.0" prefWidth="151.0" promptText="Введите нижнее значение" />
+                       <TextField fx:id="averageTimeUpperTextField" alignment="TOP_CENTER" promptText="Введите верхнее значение" />
+                   </HBox>
+   
+                   <HBox>
+                     <children>
+                          <Label prefHeight="67.0" prefWidth="199.0" text="Индивидуальная дисперсия по времени (только для правильных нажатий): " wrapText="true" />
+                          <TextField fx:id="timeDispersionLowerTextField" alignment="TOP_CENTER" prefHeight="26.0" prefWidth="150.0" promptText="Введите нижнее значение" />
+                          <TextField fx:id="timeDispersionUpperTextField" alignment="TOP_CENTER" prefHeight="26.0" prefWidth="149.0" promptText="Введите верхнее значение" />
+                     </children>
+                   </HBox>
+               </children>
+            </VBox>
+                <VBox prefHeight="400.0" prefWidth="406.0" HBox.hgrow="ALWAYS">
+                    <TableView fx:id="statisticTable" VBox.vgrow="ALWAYS">
+                        <columnResizePolicy>
+                            <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
+                        </columnResizePolicy>
+                    </TableView>
+                </VBox>
+            </children>
+        </HBox>
+    </children>
+</VBox>

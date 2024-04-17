@@ -1,15 +1,29 @@
 package nsu.fit.khomchenko.stopsignalmodule.controllers;
 
 import javafx.fxml.FXML;
-import javafx.scene.control.Label;
+import javafx.scene.control.*;
+import javafx.scene.layout.Pane;
 import nsu.fit.khomchenko.stopsignalmodule.DatabaseSchema;
-import nsu.fit.khomchenko.stopsignalmodule.utils.HuntStatisticsCalculator;
-import nsu.fit.khomchenko.stopsignalmodule.utils.OddBallStatisticsCalculator;
 
 public class StatisticsController {
-
+    @FXML
+    public TableView statisticTable;
+    public TextField successfulStopsLowerTextField;
+    public TextField successfulStopsUpperTextField;
+    public TextField missedHitsLowerTextField;
+    public TextField missedHitsUpperTextField;
+    public TextField incorrectHitsLowerTextField;
+    public TextField incorrectHitsUpperTextField;
+    public TextField correctHitsLowerTextField;
+    public TextField correctHitsUpperTextField;
+    public TextField averageTimeLowerTextField;
+    public TextField averageTimeUpperTextField;
+    public TextField timeDispersionLowerTextField;
+    public TextField timeDispersionUpperTextField;
     @FXML
     private Label statLabel;
+
+    @FXML
     private DatabaseSchema selectedSchema;
 
     @FXML
@@ -19,14 +33,12 @@ public class StatisticsController {
         this.mainController = mainController;
     }
 
+    public void displayStatistics(String statisticsResult) {
+        statLabel.setText(statisticsResult);
+    }
 
-    /*public void initializeData(DatabaseSchema selectedSchema) {
-        this.selectedSchema = selectedSchema;
+    @FXML
+    private void initialize() {
 
-        if (selectedSchema == DatabaseSchema.HUNT) {
-            statLabel.setText(HuntStatisticsCalculator.calculateStatistics());
-        } else if (selectedSchema == DatabaseSchema.ODD_BALL_EASY || selectedSchema == DatabaseSchema.ODD_BALL_HARD) {
-            statLabel.setText(OddBallStatisticsCalculator.calculateStatistics());
-        }
-    }*/
+    };
 }

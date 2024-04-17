@@ -2,6 +2,7 @@ package nsu.fit.khomchenko.stopsignalmodule.controllers;
 
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
+import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -13,7 +14,9 @@ import javafx.stage.FileChooser;
 import nsu.fit.khomchenko.stopsignalmodule.DatabaseHandler;
 import nsu.fit.khomchenko.stopsignalmodule.DatabaseSchema;
 import nsu.fit.khomchenko.stopsignalmodule.data.HuntData;
+import nsu.fit.khomchenko.stopsignalmodule.data.OddBallData;
 import nsu.fit.khomchenko.stopsignalmodule.utils.HuntStatisticsCalculator;
+import nsu.fit.khomchenko.stopsignalmodule.utils.OddBallStatisticsCalculator;
 
 import java.io.File;
 import java.io.IOException;
@@ -61,6 +64,16 @@ public class MainController {
         return borderPane;
     }
 
+    public void setMainScreenController(MainScreenController mainScreenController) {
+        this.mainScreenController = mainScreenController;
+    }
+
+
+
+    public StatisticsController getStatisticsController() {
+        return statisticsController;
+    }
+
     @FXML
     private void setLightTheme() {
         setTheme("light");
@@ -76,7 +89,6 @@ public class MainController {
         mainController.scene.getStylesheets().clear();
         mainController.scene.getStylesheets().add(stylesheet);
     }
-
 
     @FXML
     private void handleExit() {
@@ -116,7 +128,7 @@ public class MainController {
     }
 
     @FXML
-    private void handleChooseFile(ActionEvent event) {
+    public void handleChooseFile(ActionEvent event) {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Выберите файл");
 
@@ -130,15 +142,12 @@ public class MainController {
             if (selectedSchema != null) {
                 handleDialogInterface(selectedFile, selectedSchema);
 
-                if (tableController != null) {
-                    tableController.allTables = FXCollections.observableArrayList(DatabaseHandler.getAllTables(selectedSchema));
-                    tableController.showTableList(tableController.searchField.getText());
-                }
+                updateTableList(selectedSchema);
             }
         }
     }
 
-    private void handleDialogInterface(File selectedFile, DatabaseSchema selectedSchema) {
+    public void handleDialogInterface(File selectedFile, DatabaseSchema selectedSchema) {
         TextInputDialog tableNameDialog = new TextInputDialog();
         tableNameDialog.setTitle("Название таблицы");
         tableNameDialog.setHeaderText("Введите базовое название таблицы:");
@@ -174,7 +183,29 @@ public class MainController {
         String schemaName = selectedSchema.getSchemaName();
 
         String filePath = selectedFile.getAbsolutePath();
-        DatabaseHandler.loadAndSaveData(filePath, tableName, schemaName);
+        Task<Void> task = new Task<>() {
+            @Override
+            protected Void call() {
+                DatabaseHandler.loadAndSaveData(filePath, tableName, schemaName);
+                return null;
+            }
+        };
+
+        task.setOnSucceeded(e -> {
+            calculateAndCreateStatistics(selectedSchema);
+            updateTableList(selectedSchema);
+        });
+
+        Thread thread = new Thread(task);
+        thread.setDaemon(true);
+        thread.start();
+    }
+
+    private void updateTableList(DatabaseSchema selectedSchema) {
+        if (tableController != null) {
+            tableController.allTables = FXCollections.observableArrayList(DatabaseHandler.getAllTables(selectedSchema));
+            tableController.showTableList(tableController.searchField.getText());
+        }
     }
 
     private void showAlert() {
@@ -273,7 +304,7 @@ public class MainController {
     }
 
     @FXML
-    private void handleOpenTables(ActionEvent event) {
+    public void handleOpenTables(ActionEvent event) {
         Parent tableContent = loadFXML("table");
         getBorderPane().setCenter(tableContent);
 
@@ -295,8 +326,6 @@ public class MainController {
         tableController.tableView.getColumns().clear();
     }
 
-
-
     @FXML
     private void handleClose() {
         tableMenu.setVisible(false);
@@ -305,6 +334,10 @@ public class MainController {
         getBorderPane().setCenter(mainScreenContent);
     }
 
+    public void switchToStatistic(){
+        Parent mainScreenContent = loadFXML("statistics");
+        getBorderPane().setCenter(mainScreenContent);
+    }
 
     public Parent loadFXML(String fxmlPath) {
         try {
@@ -334,51 +367,45 @@ public class MainController {
         }
     }
 
-    private void calculateAndCreateStatistics(String schemaName) {
-        switch (schemaName) {
-            case "hunt":
-                List<String> tableNames = DatabaseHandler.getTableNamesForSchema(schemaName);
-                for (String tableName : tableNames) {
-                    if (!tableName.equals("summary_table")) {
-                        List<HuntData> huntDataList = DatabaseHandler.getHuntDataForTable(schemaName, tableName);
-                        if (!huntDataList.isEmpty()) {
-                            String statisticsResult = HuntStatisticsCalculator.calculateStatistics(huntDataList, tableName, schemaName);
-                            System.out.println(statisticsResult);
-                        } else {
-                            System.out.println("Нет данных для таблицы " + tableName + " в схеме " + schemaName);
-                        }
+    private void calculateAndCreateStatistics(DatabaseSchema schema) {
+        List<String> tableNames = DatabaseHandler.getAllTables(schema);
+        if (tableNames.isEmpty()) {
+            System.out.println("Нет данных для схемы " + schema);
+            return;
+        }
+        for (String tableName : tableNames) {
+            if (tableName.equals("summary_table") || tableName.endsWith("_test")) {
+                continue;
+            }
+            switch (schema) {
+                case HUNT -> {
+                    List<HuntData> huntDataList = DatabaseHandler.getHuntDataForTable(schema, tableName);
+                    if (!huntDataList.isEmpty()) {
+                        String statisticsResult = HuntStatisticsCalculator.calculateStatistics(huntDataList, tableName, schema, true);
+                        //System.out.println(statisticsResult);
+                    } else {
+                        System.out.println("Нет данных для таблицы " + tableName + " в схеме " + schema);
                     }
                 }
-                break;
-        /*case "odd_ball_easy":
-            List<OddBallEasyData> oddBallEasyDataList = DatabaseHandler.getOddBallEasyDataForSchema(schemaName);
-            if (!oddBallEasyDataList.isEmpty()) {
-                String statisticsResult = OddBallEasyStatisticsCalculator.calculateStatistics(oddBallEasyDataList);
-                // В этом месте вы можете делать что-то с результатом статистики для схемы "odd_ball_easy"
-            } else {
-                System.out.println("Нет данных для схемы 'odd_ball_easy'");
+                case ODD_BALL_EASY, ODD_BALL_HARD -> {
+                    List<OddBallData> oddBallDataList = DatabaseHandler.getOddBallDataForSchema(schema, tableName);
+                    if (!oddBallDataList.isEmpty()) {
+                        String statisticsResult = OddBallStatisticsCalculator.calculateStatistics(oddBallDataList, tableName, schema, true);
+                        //System.out.println(statisticsResult);
+                    } else {
+                        System.out.println("Нет данных для таблицы " + tableName + " в схеме " + schema.getSchemaName());
+                    }
+                }
+                default -> System.out.println("Неизвестная схема: " + schema.getSchemaName());
             }
-            break;
-        case "odd_ball_hard":
-            List<OddBallHardData> oddBallHardDataList = DatabaseHandler.getOddBallHardDataForSchema(schemaName);
-            if (!oddBallHardDataList.isEmpty()) {
-                String statisticsResult = OddBallHardStatisticsCalculator.calculateStatistics(oddBallHardDataList);
-                // В этом месте вы можете делать что-то с результатом статистики для схемы "odd_ball_hard"
-            } else {
-                System.out.println("Нет данных для схемы 'odd_ball_hard'");
-            }
-            break;*/
-            default:
-                System.out.println("Неизвестная схема: " + schemaName);
-                break;
         }
     }
 
     public void initializeStatistic() {
-        calculateAndCreateStatistics("hunt");
-        /*calculateAndCreateStatistics("odd_ball_easy");
-        calculateAndCreateStatistics("odd_ball_hard");
-        calculateAndCreateStatistics("stroop");*/
+        calculateAndCreateStatistics(DatabaseSchema.HUNT);
+        calculateAndCreateStatistics(DatabaseSchema.ODD_BALL_EASY);
+        calculateAndCreateStatistics(DatabaseSchema.ODD_BALL_HARD);
+        calculateAndCreateStatistics(DatabaseSchema.STROOP);
     }
 
     @FXML
