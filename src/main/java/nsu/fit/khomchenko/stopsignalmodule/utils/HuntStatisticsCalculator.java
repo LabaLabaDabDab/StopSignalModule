@@ -5,12 +5,14 @@ import nsu.fit.khomchenko.stopsignalmodule.DatabaseHandler;
 import nsu.fit.khomchenko.stopsignalmodule.DatabaseSchema;
 import nsu.fit.khomchenko.stopsignalmodule.data.HuntData;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
 
 public class HuntStatisticsCalculator {
-    public static String calculateStatistics(List<HuntData> tableData, String tableName, DatabaseSchema schemaName, boolean saveToDatabase) {
+    public static List<String> calculateStatistics(List<HuntData> tableData, String tableName, DatabaseSchema schemaName, boolean saveToDatabase) {
         double successfulStopsPercentage = calculateSuccessfulStopsPercentage(tableData);
         double missedPresses = countMissedPresses(tableData);
         double incorrectPresses = countIncorrectPresses(tableData);
@@ -18,22 +20,37 @@ public class HuntStatisticsCalculator {
         double averageLatencyForCorrectPresses = calculateAverageLatencyForCorrectPresses(tableData);
         double individualTimeDispersion = calculateIndividualTimeDispersion(tableData);
 
-        StringBuilder statistics = new StringBuilder();
-        statistics.append("Successful Stops Percentage: ").append(successfulStopsPercentage).append("%\n");
-        statistics.append("Missed Presses: ").append(missedPresses).append("\n");
-        statistics.append("Incorrect Presses: ").append(incorrectPresses).append("\n");
-        statistics.append("Correct Presses Percentage: ").append(correctPressesPercentage).append("%\n");
-        statistics.append("Average Latency for Correct Presses: ").append(averageLatencyForCorrectPresses).append("\n");
-        statistics.append("Individual Time Dispersion: ").append(individualTimeDispersion).append("\n");
+        List<String> statistics = new ArrayList<>();
+        statistics.add("Статистика испытуемого: " + tableName + " по методике: " + schemaName.getDisplayName());
+        statistics.add("Процент успешных торможений: " + successfulStopsPercentage + "%");
+        statistics.add("Процент пропущенных нажатий: " + missedPresses + "%");
+        statistics.add("Процент неправильных нажатий: " + incorrectPresses + "%");
+        statistics.add("Процент правильных нажатий: " + correctPressesPercentage + "%");
+        statistics.add("Среднее время для правильных нажатий: " + averageLatencyForCorrectPresses);
+        statistics.add("Индивидуальная дисперсия по времени (только для правильных нажатий): " + individualTimeDispersion);
 
         if (saveToDatabase) {
-            DatabaseHandler.saveStatisticsToSummaryTable(schemaName, tableName,
-                    successfulStopsPercentage, missedPresses, incorrectPresses,
-                    correctPressesPercentage, averageLatencyForCorrectPresses,
-                    individualTimeDispersion);
+            List<Double> values = new ArrayList<>();
+            values.add(successfulStopsPercentage);
+            values.add(missedPresses);
+            values.add(incorrectPresses);
+            values.add(correctPressesPercentage);
+            values.add(averageLatencyForCorrectPresses);
+            values.add(individualTimeDispersion);
+
+            List<String> columnNames = Arrays.asList(
+                    "successful_stops_percentage",
+                    "missed_presses_percentage",
+                    "incorrect_presses_percentage",
+                    "correct_presses_percentage",
+                    "average_reaction_time",
+                    "individual_time_dispersion"
+            );
+
+            DatabaseHandler.saveStatisticsToSummaryTable(schemaName, tableName, columnNames, values);
         }
 
-        return statistics.toString();
+        return statistics;
     }
 
     //Процент успешных торможений

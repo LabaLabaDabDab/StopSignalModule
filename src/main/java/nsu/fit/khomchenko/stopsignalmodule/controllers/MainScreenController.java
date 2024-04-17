@@ -14,6 +14,7 @@ import nsu.fit.khomchenko.stopsignalmodule.utils.OddBallStatisticsCalculator;
 
 import java.io.File;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -108,13 +109,15 @@ public class MainScreenController {
             File selectedFile = fileChooser.showOpenDialog(null);
 
             if (selectedFile != null) {
+
                 String tableName = handleDialogTestInterface(selectedFile, selectedSchema);
                 switch (selectedSchema) {
                     case HUNT -> {
                         List<HuntData> huntDataList = DatabaseHandler.getHuntDataForTable(selectedSchema, tableName);
                         if (!huntDataList.isEmpty()) {
-                            String statisticsResult = HuntStatisticsCalculator.calculateStatistics(huntDataList, tableName, selectedSchema, false);
-                            mainController.getStatisticsController().displayStatistics(statisticsResult);
+                            List<String> statisticHuntsResult = HuntStatisticsCalculator.calculateStatistics(huntDataList, tableName, selectedSchema, false);
+                            mainController.switchToStatistic();
+                            mainController.getStatisticsController().displayStatistics(statisticHuntsResult);
                         } else {
                             System.out.println("Нет данных для таблицы " + tableName + " в схеме " + selectedSchema);
                         }
@@ -122,8 +125,9 @@ public class MainScreenController {
                     case ODD_BALL_EASY, ODD_BALL_HARD -> {
                         List<OddBallData> oddBallDataList = DatabaseHandler.getOddBallDataForSchema(selectedSchema, tableName);
                         if (!oddBallDataList.isEmpty()) {
-                            String statisticsResult = OddBallStatisticsCalculator.calculateStatistics(oddBallDataList, tableName, selectedSchema, false);
-                            mainController.getStatisticsController().displayStatistics(statisticsResult);
+                            List<String> statisticsOddBallResult = OddBallStatisticsCalculator.calculateStatistics(oddBallDataList, tableName, selectedSchema, false);
+                            mainController.switchToStatistic();
+                            mainController.getStatisticsController().displayStatistics(statisticsOddBallResult);
                         } else {
                             System.out.println("Нет данных для таблицы " + tableName + " в схеме " + selectedSchema.getSchemaName());
                         }
@@ -132,7 +136,7 @@ public class MainScreenController {
                 }
                 mainController.closeMenuItem.setVisible(true);
 
-                mainController.switchToStatistic();
+
             } else {
                 showAlert("Файл не выбран.");
             }

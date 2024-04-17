@@ -381,8 +381,7 @@ public class MainController {
                 case HUNT -> {
                     List<HuntData> huntDataList = DatabaseHandler.getHuntDataForTable(schema, tableName);
                     if (!huntDataList.isEmpty()) {
-                        String statisticsResult = HuntStatisticsCalculator.calculateStatistics(huntDataList, tableName, schema, true);
-                        //System.out.println(statisticsResult);
+                        List<String> statisticsResult = HuntStatisticsCalculator.calculateStatistics(huntDataList, tableName, schema, true);
                     } else {
                         System.out.println("Нет данных для таблицы " + tableName + " в схеме " + schema);
                     }
@@ -390,8 +389,7 @@ public class MainController {
                 case ODD_BALL_EASY, ODD_BALL_HARD -> {
                     List<OddBallData> oddBallDataList = DatabaseHandler.getOddBallDataForSchema(schema, tableName);
                     if (!oddBallDataList.isEmpty()) {
-                        String statisticsResult = OddBallStatisticsCalculator.calculateStatistics(oddBallDataList, tableName, schema, true);
-                        //System.out.println(statisticsResult);
+                        List<String> statisticsResult = OddBallStatisticsCalculator.calculateStatistics(oddBallDataList, tableName, schema, true);
                     } else {
                         System.out.println("Нет данных для таблицы " + tableName + " в схеме " + schema.getSchemaName());
                     }
@@ -411,6 +409,7 @@ public class MainController {
     @FXML
     private void initialize() {
         mainController = this;
+        loadFXML("mainScreen");
         initializeStatistic();
     }
 }

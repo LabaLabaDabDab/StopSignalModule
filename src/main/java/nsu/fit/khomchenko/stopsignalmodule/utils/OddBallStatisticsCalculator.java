@@ -4,29 +4,43 @@ import nsu.fit.khomchenko.stopsignalmodule.DatabaseHandler;
 import nsu.fit.khomchenko.stopsignalmodule.DatabaseSchema;
 import nsu.fit.khomchenko.stopsignalmodule.data.OddBallData;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class OddBallStatisticsCalculator {
-    public static String calculateStatistics(List<OddBallData> dataList, String tableName, DatabaseSchema schema, boolean saveToDatabase) {
-        double incorrectPressesPercentage = calculateIncorrectPressesPercentage(dataList);
-        double correctPressesPercentage = calculateCorrectPressesPercentage(dataList);
+    public static List<String> calculateStatistics(List<OddBallData> dataList, String tableName, DatabaseSchema schema, boolean saveToDatabase) {
+        double incorrectPressesOffTargetTonePercentage = calculateIncorrectPressesPercentage(dataList);
+        double correctPressesTargetTonePercentage = calculateCorrectPressesPercentage(dataList);
         double averageReactionTime = calculateAverageReactionTime(dataList);
         double timeDispersion = calculateIndividualTimeDispersion(dataList);
 
-        StringBuilder statistics = new StringBuilder();
-        statistics.append("Statistics for table: ").append(tableName).append(" in schema: ").append(schema.getDisplayName()).append("\n");
-        statistics.append("Incorrect Presses Percentage: ").append(incorrectPressesPercentage).append("%\n");
-        statistics.append("Correct Presses Percentage: ").append(correctPressesPercentage).append("%\n");
-        statistics.append("Average Reaction Time: ").append(averageReactionTime).append("\n");
-        statistics.append("Time Dispersion: ").append(timeDispersion).append("\n");
+
+        List<String> statistics = new ArrayList<>();
+        statistics.add("Статистика испытуемого: " + tableName + "  по методике: " + schema);
+        statistics.add("Процент некорректных нажатий после нецелевого тона: " + incorrectPressesOffTargetTonePercentage + "%");
+        statistics.add("процент корректных нажатий после целевого тона: " + correctPressesTargetTonePercentage  + "%");
+        statistics.add("Среднее время правильной реакции: " + averageReactionTime);
+        statistics.add("Среднее квадратичное отклонение по правильной реакции: " + timeDispersion);
 
         if (saveToDatabase) {
-            DatabaseHandler.saveStatisticsToSummaryTable(schema, tableName,
-                    0.0, 0.0, incorrectPressesPercentage, correctPressesPercentage,
-                    averageReactionTime, timeDispersion);
+            List<Double> values = new ArrayList<>();
+            values.add(incorrectPressesOffTargetTonePercentage);
+            values.add(correctPressesTargetTonePercentage);
+            values.add(averageReactionTime);
+            values.add(timeDispersion);
+
+            List<String> columnNames = Arrays.asList(
+                    "incorrect_presses_off_target_tone_percentage",
+                    "correct_presses_target_tone_percentage",
+                    "average_reaction_time",
+                    "individual_time_dispersion"
+            );
+
+            DatabaseHandler.saveStatisticsToSummaryTable(schema, tableName, columnNames, values);
         }
 
-        return statistics.toString();
+        return statistics;
     }
 
     //процент некорректных нажатий после нецелевого тона

@@ -2,12 +2,12 @@
 
 <?import javafx.scene.control.CheckBox?>
 <?import javafx.scene.control.Label?>
-<?import javafx.scene.control.TableView?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
 
-<VBox alignment="TOP_CENTER" prefHeight="400.0" prefWidth="790.0" xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1" fx:controller="nsu.fit.khomchenko.stopsignalmodule.controllers.StatisticsController">
+<VBox alignment="TOP_CENTER" prefHeight="400.0" prefWidth="790.0" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="nsu.fit.khomchenko.stopsignalmodule.controllers.StatisticsController">
     <children>
         <HBox alignment="TOP_CENTER">
             <children>
@@ -57,11 +57,34 @@
                </children>
             </VBox>
                 <VBox prefHeight="400.0" prefWidth="406.0" HBox.hgrow="ALWAYS">
-                    <TableView fx:id="statisticTable" VBox.vgrow="ALWAYS">
-                        <columnResizePolicy>
-                            <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
-                        </columnResizePolicy>
-                    </TableView>
+                    <Label fx:id="subject" >
+                        <font>
+                            <Font size="20.0" />
+                        </font></Label>
+                    <Label fx:id="successfulStopsLabel" >
+                  <font>
+                     <Font size="20.0" />
+                  </font></Label>
+                    <Label fx:id="missedHitsLabel">
+                  <font>
+                     <Font size="20.0" />
+                  </font></Label>
+                    <Label fx:id="incorrectHitsLabel" >
+                  <font>
+                     <Font size="20.0" />
+                  </font></Label>
+                    <Label fx:id="correctHitsLabel">
+                  <font>
+                     <Font size="20.0" />
+                  </font></Label>
+                    <Label fx:id="averageTimeLabel" >
+                  <font>
+                     <Font size="20.0" />
+                  </font></Label>
+                    <Label fx:id="timeDispersionLabel" >
+                  <font>
+                     <Font size="20.0" />
+                  </font></Label>
                 </VBox>
             </children>
         </HBox>

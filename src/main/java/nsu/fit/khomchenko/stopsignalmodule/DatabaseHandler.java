@@ -287,25 +287,17 @@ public class DatabaseHandler {
     }
 
     public static void saveStatisticsToSummaryTable(DatabaseSchema schema, String tableNameSource,
-                                                    double successfulStopsPercentage, double missedPressesPercentage, double incorrectPressesPercentagePercentage,
-                                                    double correctPressesPercentage, double averageLatencyForCorrectPresses,
-                                                    double individualTimeDispersion) {
+                                                    List<String> columnNames, List<Double> statistics) {
         try (Connection connection = connect(schema.getSchemaName())) {
             if (connection != null) {
                 if (!isTableExists("summary_table", connection, schema)) {
-                    createSummaryTable("summary_table", connection, schema);
+                    createSummaryTable("summary_table", connection, schema, columnNames);
                 }
 
                 if (isRecordExists(tableNameSource, connection, schema)) {
-                    updateSummaryTable(tableNameSource, connection, schema,
-                            successfulStopsPercentage, missedPressesPercentage, incorrectPressesPercentagePercentage,
-                            correctPressesPercentage, averageLatencyForCorrectPresses,
-                            individualTimeDispersion);
+                    updateSummaryTable(tableNameSource, connection, schema, columnNames, statistics);
                 } else {
-                    insertSummaryTable(tableNameSource, connection, schema,
-                            successfulStopsPercentage, missedPressesPercentage, incorrectPressesPercentagePercentage,
-                            correctPressesPercentage, averageLatencyForCorrectPresses,
-                            individualTimeDispersion);
+                    insertSummaryTable(tableNameSource, connection, schema, columnNames, statistics);
                 }
             }
         } catch (SQLException e) {
@@ -314,18 +306,24 @@ public class DatabaseHandler {
         }
     }
 
-    private static void createSummaryTable(String tableName, Connection connection, DatabaseSchema schema) throws SQLException {
+    private static void createSummaryTable(String tableName, Connection connection, DatabaseSchema schema, List<String> columnNames) throws SQLException {
+        StringBuilder createStatement = new StringBuilder();
+        createStatement.append("CREATE TABLE ").append(schema.getSchemaName()).append(".").append(tableName).append(" (");
+        createStatement.append("source_table_name VARCHAR(255), ");
+
+        for (int i = 0; i < columnNames.size(); i++) {
+            createStatement.append(columnNames.get(i)).append(" VARCHAR(255)");
+            if (i < columnNames.size() - 1) {
+                createStatement.append(", ");
+            }
+        }
+        createStatement.append(")");
+
         try (Statement statement = connection.createStatement()) {
-            statement.executeUpdate("CREATE TABLE " +  schema.getSchemaName() + "." + tableName + " (" +
-                    "source_table_name VARCHAR(255), " +
-                    "successful_stops_percentage VARCHAR, " +
-                    "missed_presses_percentage VARCHAR, " +
-                    "incorrect_presses_percentage VARCHAR, " +
-                    "correct_presses_percentage VARCHAR, " +
-                    "average_latency_for_correct_presses VARCHAR, " +
-                    "individual_time_dispersion VARCHAR)");
+            statement.executeUpdate(createStatement.toString());
         }
     }
+
 
     private static boolean isRecordExists(String tableNameSource, Connection connection, DatabaseSchema schema) throws SQLException {
         try (PreparedStatement statement = connection.prepareStatement(
@@ -338,47 +336,51 @@ public class DatabaseHandler {
     }
 
     private static void updateSummaryTable(String tableNameSource, Connection connection, DatabaseSchema schema,
-                                           double successfulStopsPercentage, double missedPressesPercentage,
-                                           double incorrectPressesPercentage, double correctPressesPercentage,
-                                           double averageLatencyForCorrectPresses, double individualTimeDispersion) throws SQLException {
-        try (PreparedStatement statement = connection.prepareStatement(
-                "UPDATE " + schema.getSchemaName() + "." + "summary_table" + " SET " +
-                        "successful_stops_percentage = ?, " +
-                        "missed_presses_percentage = ?, " +
-                        "incorrect_presses_percentage = ?, " +
-                        "correct_presses_percentage = ?, " +
-                        "average_latency_for_correct_presses = ?, " +
-                        "individual_time_dispersion = ? " +
-                        "WHERE source_table_name = ?")) {
-            statement.setString(1, String.format("%.2f%%", successfulStopsPercentage));
-            statement.setString(2, String.format("%.2f%%", missedPressesPercentage));
-            statement.setString(3, String.format("%.2f%%", incorrectPressesPercentage));
-            statement.setString(4, String.format("%.2f%%", correctPressesPercentage));
-            statement.setString(5, String.format("%.5f", averageLatencyForCorrectPresses));
-            statement.setString(6, String.format("%.5f", individualTimeDispersion));
-            statement.setString(7, tableNameSource);
+                                           List<String> columnNames, List<Double> statistics) throws SQLException {
+        StringBuilder updateStatement = new StringBuilder();
+        updateStatement.append("UPDATE ").append(schema.getSchemaName()).append(".").append("summary_table").append(" SET ");
+
+        for (int i = 0; i < columnNames.size(); i++) {
+            updateStatement.append(columnNames.get(i)).append(" = ?");
+            if (i < columnNames.size() - 1) {
+                updateStatement.append(", ");
+            }
+        }
+        updateStatement.append(" WHERE source_table_name = ?");
+
+        try (PreparedStatement statement = connection.prepareStatement(updateStatement.toString())) {
+            for (int i = 0; i < statistics.size(); i++) {
+                statement.setString(i + 1, formatValue(statistics.get(i), columnNames.get(i)));
+            }
+            statement.setString(statistics.size() + 1, tableNameSource);
             statement.executeUpdate();
         }
     }
 
     private static void insertSummaryTable(String tableNameSource, Connection connection, DatabaseSchema schema,
-                                           double successfulStopsPercentage, double missedPressesPercentage,
-                                           double incorrectPressesPercentage, double correctPressesPercentage,
-                                           double averageLatencyForCorrectPresses, double individualTimeDispersion) throws SQLException {
-        try (PreparedStatement statement = connection.prepareStatement(
-                "INSERT INTO " + schema.getSchemaName() + "." + "summary_table" + " " +
-                        "(source_table_name, successful_stops_percentage, missed_presses_percentage, " +
-                        "incorrect_presses_percentage, correct_presses_percentage, average_latency_for_correct_presses, " +
-                        "individual_time_dispersion) VALUES (?, ?, ?, ?, ?, ?, ?)")) {
+                                           List<String> columnNames, List<Double> statistics) throws SQLException {
+        StringBuilder insertStatement = new StringBuilder();
+        insertStatement.append("INSERT INTO ").append(schema.getSchemaName()).append(".").append("summary_table").append(" (source_table_name");
+        for (String columnName : columnNames) {
+            insertStatement.append(", ").append(columnName);
+        }
+        insertStatement.append(") VALUES (?");
+        for (int i = 0; i < columnNames.size(); i++) {
+            insertStatement.append(", ?");
+        }
+        insertStatement.append(")");
+
+        try (PreparedStatement statement = connection.prepareStatement(insertStatement.toString())) {
             statement.setString(1, tableNameSource);
-            statement.setString(2, String.format("%.2f%%", successfulStopsPercentage));
-            statement.setString(3, String.format("%.2f%%", missedPressesPercentage));
-            statement.setString(4, String.format("%.2f%%", incorrectPressesPercentage));
-            statement.setString(5, String.format("%.2f%%", correctPressesPercentage));
-            statement.setString(6, String.format("%.5f", averageLatencyForCorrectPresses));
-            statement.setString(7, String.format("%.5f", individualTimeDispersion));
+            for (int i = 0; i < statistics.size(); i++) {
+                statement.setString(i + 2, formatValue(statistics.get(i), columnNames.get(i)));
+            }
             statement.executeUpdate();
         }
+    }
+
+    private static String formatValue(double value, String columnName) {
+        return columnName.toLowerCase().contains("percentage") ? String.format("%.2f%%", value) : String.valueOf(value);
     }
 
     public static List<HuntData> getHuntDataForTable(DatabaseSchema schema, String tableName) {
