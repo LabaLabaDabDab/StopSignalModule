@@ -20,10 +20,9 @@ import nsu.fit.khomchenko.stopsignalmodule.utils.OddBallStatisticsCalculator;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 public class MainController {
@@ -48,7 +47,9 @@ public class MainController {
 
     public Scene scene;
 
-    @FXML
+    private final ExecutorService executor = Executors.newSingleThreadExecutor();
+
+
     private StatisticsController statisticsController;
 
     public void setScene(Scene scene) {
@@ -67,7 +68,6 @@ public class MainController {
     public void setMainScreenController(MainScreenController mainScreenController) {
         this.mainScreenController = mainScreenController;
     }
-
 
 
     public StatisticsController getStatisticsController() {
@@ -183,23 +183,15 @@ public class MainController {
         String schemaName = selectedSchema.getSchemaName();
 
         String filePath = selectedFile.getAbsolutePath();
-        Task<Void> task = new Task<>() {
-            @Override
-            protected Void call() {
-                DatabaseHandler.loadAndSaveData(filePath, tableName, schemaName);
-                return null;
-            }
-        };
-
-        task.setOnSucceeded(e -> {
-            calculateAndCreateStatistics(selectedSchema);
-            updateTableList(selectedSchema);
+        executor.submit(() -> {
+            DatabaseHandler.loadAndSaveData(filePath, tableName, schemaName);
+            Platform.runLater(() -> {
+                calculateAndCreateStatistics(selectedSchema);
+                updateTableList(selectedSchema);
+            });
         });
-
-        Thread thread = new Thread(task);
-        thread.setDaemon(true);
-        thread.start();
     }
+
 
     private void updateTableList(DatabaseSchema selectedSchema) {
         if (tableController != null) {
@@ -381,8 +373,7 @@ public class MainController {
                 case HUNT -> {
                     List<HuntData> huntDataList = DatabaseHandler.getHuntDataForTable(schema, tableName);
                     if (!huntDataList.isEmpty()) {
-                        String statisticsResult = HuntStatisticsCalculator.calculateStatistics(huntDataList, tableName, schema, true);
-                        //System.out.println(statisticsResult);
+                        Map<String, Map<String, String>> statisticsResult = HuntStatisticsCalculator.calculateStatistics(huntDataList, tableName, schema, true);
                     } else {
                         System.out.println("Нет данных для таблицы " + tableName + " в схеме " + schema);
                     }
@@ -390,8 +381,7 @@ public class MainController {
                 case ODD_BALL_EASY, ODD_BALL_HARD -> {
                     List<OddBallData> oddBallDataList = DatabaseHandler.getOddBallDataForSchema(schema, tableName);
                     if (!oddBallDataList.isEmpty()) {
-                        String statisticsResult = OddBallStatisticsCalculator.calculateStatistics(oddBallDataList, tableName, schema, true);
-                        //System.out.println(statisticsResult);
+                        Map<String, Map<String, String>> statisticsResult = OddBallStatisticsCalculator.calculateStatistics(oddBallDataList, tableName, schema, true);
                     } else {
                         System.out.println("Нет данных для таблицы " + tableName + " в схеме " + schema.getSchemaName());
                     }
@@ -411,6 +401,28 @@ public class MainController {
     @FXML
     private void initialize() {
         mainController = this;
+        loadFXML("mainScreen");
         initializeStatistic();
+
+        Runtime.getRuntime().addShutdownHook(new Thread(this::deleteTestTablesFromAllSchemas));
+    }
+
+    private void deleteTestTablesFromAllSchemas() {
+        for (DatabaseSchema schema : DatabaseSchema.values()) {
+            List<String> tableNames = DatabaseHandler.getAllTables(schema);
+
+            List<String> testTableNames = tableNames.stream()
+                    .filter(tableName -> tableName.endsWith("_test"))
+                    .toList();
+
+            testTableNames.forEach(tableName -> {
+                boolean success = DatabaseHandler.deleteTable(schema, tableName);
+                if (success) {
+                    System.out.println("Таблица " + tableName + " из схемы " + schema.getSchemaName() + " успешно удалена.");
+                } else {
+                    System.out.println("Ошибка при удалении таблицы " + tableName + " из схемы " + schema.getSchemaName());
+                }
+            });
+        }
     }
 }
