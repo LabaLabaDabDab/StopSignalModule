@@ -1,96 +1,134 @@
 package nsu.fit.khomchenko.stopsignalmodule.controllers;
 
 import javafx.fxml.FXML;
-import javafx.scene.control.*;
-import javafx.scene.layout.Pane;
+import javafx.geometry.Insets;
+import javafx.scene.control.CheckBox;
+import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
+import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
+import javafx.scene.text.TextAlignment;
+import nsu.fit.khomchenko.stopsignalmodule.DatabaseHandler;
 import nsu.fit.khomchenko.stopsignalmodule.DatabaseSchema;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 public class StatisticsController {
     @FXML
-    public TableView statisticTable;
+    public TextField ageLowerTextField;
+    @FXML
+    public TextField ageUpperTextField;
 
     @FXML
-    public TextField successfulStopsLowerTextField;
-    @FXML
-    public TextField successfulStopsUpperTextField;
-    @FXML
-    public TextField missedHitsLowerTextField;
-    @FXML
-    public TextField missedHitsUpperTextField;
-    @FXML
-    public TextField incorrectHitsLowerTextField;
-    @FXML
-    public TextField incorrectHitsUpperTextField;
-    @FXML
-    public TextField correctHitsLowerTextField;
-    @FXML
-    public TextField correctHitsUpperTextField;
-    @FXML
-    public TextField averageTimeLowerTextField;
-    @FXML
-    public TextField averageTimeUpperTextField;
-    @FXML
-    public TextField timeDispersionLowerTextField;
-    @FXML
-    public TextField timeDispersionUpperTextField;
-    @FXML
-    public Label subject;
-
+    public VBox VboxForData;
 
     @FXML
-    private Label successfulStopsLabel;
-    @FXML
-    private Label missedHitsLabel;
-    @FXML
-    private Label incorrectHitsLabel;
-    @FXML
-    private Label correctHitsLabel;
-    @FXML
-    private Label averageTimeLabel;
-    @FXML
-    private Label timeDispersionLabel;
+    public VBox VboxDelta;
 
     @FXML
-    private Label statLabel;
+    private CheckBox maleCheckBox;
 
     @FXML
+    private CheckBox femaleCheckBox;
+
+
     private DatabaseSchema selectedSchema;
+
+    private DatabaseHandler databaseHandler;
 
     @FXML
     private MainController mainController;
+
+    private CompletableFuture<List<Double>> averageStatisticsFuture;
+
+    public void setSelectedSchema(DatabaseSchema schema) {
+        this.selectedSchema = schema;
+    }
 
     public void setMainController(MainController mainController) {
         this.mainController = mainController;
     }
 
-    public void displayStatistics(List<String> statisticsResult) {
-        successfulStopsLabel.setText(statisticsResult.get(0));
-        successfulStopsLabel.setTextFill(Color.BLACK);
+    public void displayStatistics(Map<String, Map<String, String>> statisticsResult, Map<String, Double> averageStatisticsResultFinal) {
+        VboxForData.getChildren().clear();
+        VboxDelta.getChildren().clear();
 
-        successfulStopsLabel.setText(statisticsResult.get(1));
-        successfulStopsLabel.setTextFill(Color.GREEN);
+        Font fontDelta = Font.font("Arial", FontWeight.BOLD, 15);
+        Insets labelDelta = new Insets(5);
 
-        missedHitsLabel.setText(statisticsResult.get(2));
-        missedHitsLabel.setTextFill(Color.GREEN);
+        Font fontData = Font.font("Arial", FontWeight.BOLD, 20);
+        Insets labelData = new Insets(5);
 
-        incorrectHitsLabel.setText(statisticsResult.get(3));
-        incorrectHitsLabel.setTextFill(Color.GREEN);
+        List<String> columnNames = new ArrayList<>(averageStatisticsResultFinal.keySet());
 
-        correctHitsLabel.setText(statisticsResult.get(4));
-        correctHitsLabel.setTextFill(Color.GREEN);
+        for (Map.Entry<String, Map<String, String>> entry : statisticsResult.entrySet()) {
+            String columnName = entry.getKey();
+            Map<String, String> columnData = entry.getValue();
 
-        averageTimeLabel.setText(statisticsResult.get(5));
-        averageTimeLabel.setTextFill(Color.GREEN);
+            String comment = columnData.get("comment");
+            String valueString = columnData.get("value");
+            Double value = Double.parseDouble(valueString); // Преобразуем значение в числовой формат
 
-        timeDispersionLabel.setText(statisticsResult.get(6));
-        timeDispersionLabel.setTextFill(Color.GREEN);
+            Label label = new Label(comment + ": " + valueString);
+            label.setFont(fontData);
+            label.setTextAlignment(TextAlignment.LEFT);
+            label.setWrapText(true);
+            label.setPadding(labelData);
+
+            // Проверяем, попадает ли значение в пределы дельты
+            boolean withinDelta = false;
+            if (averageStatisticsResultFinal.containsKey(columnName)) {
+                Double averageValue = averageStatisticsResultFinal.get(columnName);
+                Double deltaValue = Double.parseDouble(((TextField) VboxDelta.getChildren().get(columnNames.indexOf(columnName) * 2 + 1)).getText());
+
+                if (value >= averageValue - deltaValue && value <= averageValue + deltaValue) {
+                    withinDelta = true;
+                }
+            }
+
+            // Установка цвета в зависимости от того, попадает ли значение в пределы дельты
+            if (withinDelta) {
+                label.setTextFill(Color.GREEN); // Зеленый цвет, если значение попадает в пределы дельты
+            } else {
+                label.setTextFill(Color.RED); // Красный цвет, если значение не попадает в пределы дельты
+            }
+
+            VboxForData.getChildren().add(label);
+        }
+
+        for (String columnName : columnNames) {
+            Label label = new Label("Δ для: " + columnName);
+            label.setFont(fontDelta);
+            label.setTextAlignment(TextAlignment.LEFT);
+            label.setWrapText(true);
+            label.setPadding(labelDelta);
+            VboxDelta.getChildren().add(label);
+
+            TextField deltaTextField = new TextField();
+            deltaTextField.textProperty().addListener((observable, oldValue, newValue) -> {
+                if (!newValue.matches("\\d*\\.?\\d*")) {
+                    deltaTextField.setText(oldValue);
+                }
+            });
+
+            deltaTextField.setText("30");
+            VboxDelta.getChildren().add(deltaTextField);
+        }
     }
+
+
 
     @FXML
     private void initialize() {
+        maleCheckBox.setSelected(true);
+        femaleCheckBox.setSelected(true);
 
-    };
+        ageLowerTextField.setText("0");
+        ageUpperTextField.setText("120");
+    }
 }

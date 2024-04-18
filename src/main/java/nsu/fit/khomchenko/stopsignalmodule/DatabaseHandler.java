@@ -457,4 +457,56 @@ public class DatabaseHandler {
         }
     }
 
+    public static Map<String, Double> getAverageStatistics(DatabaseSchema schema, boolean isMaleSelected, boolean isFemaleSelected, int ageLowerBound, int ageUpperBound) {
+        Map<String, Double> averageValuesMap = new HashMap<>();
+
+        try (Connection connection = connect(schema.getSchemaName())) {
+            if (connection != null) {
+                String query = "SELECT ";
+
+                List<String> columnNames = getColumnNames(schema, "summary_table");
+                for (String columnName : columnNames) {
+                    if (!columnName.equals("source_table_name")) {
+                        query += "AVG(CAST(REPLACE(REPLACE(" + columnName + ", '%', ''), ',', '.') AS DECIMAL(10,2))) as " + columnName + ", ";
+                    }
+                }
+                query = query.substring(0, query.length() - 2);
+                query += " FROM summary_table";
+
+                query += " WHERE CAST(REPLACE(SPLIT_PART(source_table_name, '_', 3), '%', '') AS DECIMAL(10,0)) BETWEEN ? AND ?";
+
+                if (isMaleSelected && isFemaleSelected) {
+                    query += " AND (source_table_name LIKE '%_М_%' OR source_table_name LIKE '%_Ж_%')";
+                } else if (!isMaleSelected && !isFemaleSelected) {
+                    query += " AND NOT (source_table_name LIKE '%_М_%' OR source_table_name LIKE '%_Ж_%')";
+                } else if (isMaleSelected) {
+                    query += " AND source_table_name LIKE '%_М_%'";
+                } else if (isFemaleSelected) {
+                    query += " AND source_table_name LIKE '%_Ж_%'";
+                }
+
+                try (PreparedStatement statement = connection.prepareStatement(query)) {
+                    statement.setInt(1, ageLowerBound);
+                    statement.setInt(2, ageUpperBound);
+                    ResultSet resultSet = statement.executeQuery();
+                    ResultSetMetaData metaData = resultSet.getMetaData();
+                    int columnCount = metaData.getColumnCount();
+
+                    if (resultSet.next()) {
+                        for (int i = 1; i <= columnCount; i++) {
+                            String columnName = metaData.getColumnName(i);
+                            double columnAverage = resultSet.getDouble(i);
+                            averageValuesMap.put(columnName, columnAverage);
+                        }
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return averageValuesMap;
+    }
+
+
 }

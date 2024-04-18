@@ -4,31 +4,45 @@ import nsu.fit.khomchenko.stopsignalmodule.DatabaseHandler;
 import nsu.fit.khomchenko.stopsignalmodule.DatabaseSchema;
 import nsu.fit.khomchenko.stopsignalmodule.data.OddBallData;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 public class OddBallStatisticsCalculator {
-    public static List<String> calculateStatistics(List<OddBallData> dataList, String tableName, DatabaseSchema schema, boolean saveToDatabase) {
+    public static Map<String, Map<String, String>> calculateStatistics(List<OddBallData> dataList, String tableName, DatabaseSchema schema, boolean saveToDatabase) {
         double incorrectPressesOffTargetTonePercentage = calculateIncorrectPressesPercentage(dataList);
         double correctPressesTargetTonePercentage = calculateCorrectPressesPercentage(dataList);
         double averageReactionTime = calculateAverageReactionTime(dataList);
         double timeDispersion = calculateIndividualTimeDispersion(dataList);
 
+        Map<String, Map<String, String>> statisticsMap = new HashMap<>();
 
-        List<String> statistics = new ArrayList<>();
-        statistics.add("Статистика испытуемого: " + tableName + "  по методике: " + schema);
-        statistics.add("Процент некорректных нажатий после нецелевого тона: " + incorrectPressesOffTargetTonePercentage + "%");
-        statistics.add("процент корректных нажатий после целевого тона: " + correctPressesTargetTonePercentage  + "%");
-        statistics.add("Среднее время правильной реакции: " + averageReactionTime);
-        statistics.add("Среднее квадратичное отклонение по правильной реакции: " + timeDispersion);
+        // Добавляем комментарии и значения для каждой статистики
+        Map<String, String> incorrectPressesComment = new HashMap<>();
+        incorrectPressesComment.put("comment", "Процент некорректных нажатий после нецелевого тона");
+        incorrectPressesComment.put("value", incorrectPressesOffTargetTonePercentage + "%");
+        statisticsMap.put("incorrect_presses_off_target_tone_percentage", incorrectPressesComment);
+
+        Map<String, String> correctPressesComment = new HashMap<>();
+        correctPressesComment.put("comment", "Процент корректных нажатий после целевого тона");
+        correctPressesComment.put("value", correctPressesTargetTonePercentage + "%");
+        statisticsMap.put("correct_presses_target_tone_percentage", correctPressesComment);
+
+        Map<String, String> averageReactionTimeComment = new HashMap<>();
+        averageReactionTimeComment.put("comment", "Среднее время правильной реакции");
+        averageReactionTimeComment.put("value", String.valueOf(averageReactionTime));
+        statisticsMap.put("average_reaction_time", averageReactionTimeComment);
+
+        Map<String, String> timeDispersionComment = new HashMap<>();
+        timeDispersionComment.put("comment", "Среднее квадратичное отклонение по правильной реакции");
+        timeDispersionComment.put("value", String.valueOf(timeDispersion));
+        statisticsMap.put("individual_time_dispersion", timeDispersionComment);
 
         if (saveToDatabase) {
-            List<Double> values = new ArrayList<>();
-            values.add(incorrectPressesOffTargetTonePercentage);
-            values.add(correctPressesTargetTonePercentage);
-            values.add(averageReactionTime);
-            values.add(timeDispersion);
+            List<Double> values = Arrays.asList(
+                    incorrectPressesOffTargetTonePercentage,
+                    correctPressesTargetTonePercentage,
+                    averageReactionTime,
+                    timeDispersion
+            );
 
             List<String> columnNames = Arrays.asList(
                     "incorrect_presses_off_target_tone_percentage",
@@ -40,8 +54,10 @@ public class OddBallStatisticsCalculator {
             DatabaseHandler.saveStatisticsToSummaryTable(schema, tableName, columnNames, values);
         }
 
-        return statistics;
+        return statisticsMap;
     }
+
+
 
     //процент некорректных нажатий после нецелевого тона
     private static double calculateIncorrectPressesPercentage(List<OddBallData> dataList) {

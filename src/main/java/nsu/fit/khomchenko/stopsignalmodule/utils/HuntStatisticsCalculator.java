@@ -5,14 +5,12 @@ import nsu.fit.khomchenko.stopsignalmodule.DatabaseHandler;
 import nsu.fit.khomchenko.stopsignalmodule.DatabaseSchema;
 import nsu.fit.khomchenko.stopsignalmodule.data.HuntData;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 
 public class HuntStatisticsCalculator {
-    public static List<String> calculateStatistics(List<HuntData> tableData, String tableName, DatabaseSchema schemaName, boolean saveToDatabase) {
+    public static Map<String, Map<String, String>> calculateStatistics(List<HuntData> tableData, String tableName, DatabaseSchema schemaName, boolean saveToDatabase) {
         double successfulStopsPercentage = calculateSuccessfulStopsPercentage(tableData);
         double missedPresses = countMissedPresses(tableData);
         double incorrectPresses = countIncorrectPresses(tableData);
@@ -20,38 +18,63 @@ public class HuntStatisticsCalculator {
         double averageLatencyForCorrectPresses = calculateAverageLatencyForCorrectPresses(tableData);
         double individualTimeDispersion = calculateIndividualTimeDispersion(tableData);
 
-        List<String> statistics = new ArrayList<>();
-        statistics.add("Статистика испытуемого: " + tableName + " по методике: " + schemaName.getDisplayName());
-        statistics.add("Процент успешных торможений: " + successfulStopsPercentage + "%");
-        statistics.add("Процент пропущенных нажатий: " + missedPresses + "%");
-        statistics.add("Процент неправильных нажатий: " + incorrectPresses + "%");
-        statistics.add("Процент правильных нажатий: " + correctPressesPercentage + "%");
-        statistics.add("Среднее время для правильных нажатий: " + averageLatencyForCorrectPresses);
-        statistics.add("Индивидуальная дисперсия по времени (только для правильных нажатий): " + individualTimeDispersion);
+        Map<String, Map<String, String>> statisticsMap = new HashMap<>();
+
+        Map<String, String> successfulStopsData = new HashMap<>();
+        successfulStopsData.put("comment", "Процент успешных торможений");
+        successfulStopsData.put("value", successfulStopsPercentage + "%");
+        statisticsMap.put("successful_stops_percentage", successfulStopsData);
+
+        Map<String, String> missedPressesData = new HashMap<>();
+        missedPressesData.put("comment", "Процент пропущенных нажатий");
+        missedPressesData.put("value", missedPresses + "%");
+        statisticsMap.put("missed_presses_percentage", missedPressesData);
+
+        Map<String, String> incorrectPressesData = new HashMap<>();
+        incorrectPressesData.put("comment", "Процент неправильных нажатий");
+        incorrectPressesData.put("value", incorrectPresses + "%");
+        statisticsMap.put("incorrect_presses_percentage", incorrectPressesData);
+
+        Map<String, String> correctPressesPercentageData = new HashMap<>();
+        correctPressesPercentageData.put("comment", "Процент правильных нажатий");
+        correctPressesPercentageData.put("value", correctPressesPercentage + "%");
+        statisticsMap.put("correct_presses_percentage", correctPressesPercentageData);
+
+        Map<String, String> averageLatencyForCorrectPressesData = new HashMap<>();
+        averageLatencyForCorrectPressesData.put("comment", "Среднее время для правильных нажатий");
+        averageLatencyForCorrectPressesData.put("value", String.valueOf(averageLatencyForCorrectPresses));
+        statisticsMap.put("average_latency_for_correct_presses", averageLatencyForCorrectPressesData);
+
+        Map<String, String> individualTimeDispersionData = new HashMap<>();
+        individualTimeDispersionData.put("comment", "Индивидуальная дисперсия по времени");
+        individualTimeDispersionData.put("value", String.valueOf(individualTimeDispersion));
+        statisticsMap.put("individual_time_dispersion", individualTimeDispersionData);
 
         if (saveToDatabase) {
-            List<Double> values = new ArrayList<>();
-            values.add(successfulStopsPercentage);
-            values.add(missedPresses);
-            values.add(incorrectPresses);
-            values.add(correctPressesPercentage);
-            values.add(averageLatencyForCorrectPresses);
-            values.add(individualTimeDispersion);
+            List<Double> values = Arrays.asList(
+                    successfulStopsPercentage,
+                    missedPresses,
+                    incorrectPresses,
+                    correctPressesPercentage,
+                    averageLatencyForCorrectPresses,
+                    individualTimeDispersion
+            );
 
             List<String> columnNames = Arrays.asList(
                     "successful_stops_percentage",
                     "missed_presses_percentage",
                     "incorrect_presses_percentage",
                     "correct_presses_percentage",
-                    "average_reaction_time",
+                    "average_latency_for_correct_presses",
                     "individual_time_dispersion"
             );
 
             DatabaseHandler.saveStatisticsToSummaryTable(schemaName, tableName, columnNames, values);
         }
 
-        return statistics;
+        return statisticsMap;
     }
+
 
     //Процент успешных торможений
     private static double calculateSuccessfulStopsPercentage(List<HuntData> dataList) {
