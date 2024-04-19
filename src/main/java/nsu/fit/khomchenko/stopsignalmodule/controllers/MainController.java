@@ -328,6 +328,7 @@ public class MainController {
 
     public void switchToStatistic(){
         Parent mainScreenContent = loadFXML("statistics");
+        closeMenuItem.setVisible(true);
         getBorderPane().setCenter(mainScreenContent);
     }
 

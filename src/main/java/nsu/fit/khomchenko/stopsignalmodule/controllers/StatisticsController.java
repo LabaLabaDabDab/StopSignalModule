@@ -16,6 +16,7 @@ import nsu.fit.khomchenko.stopsignalmodule.DatabaseSchema;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 public class StatisticsController {
@@ -64,42 +65,8 @@ public class StatisticsController {
         Font fontData = Font.font("Arial", FontWeight.BOLD, 20);
         Insets labelData = new Insets(5);
 
-        List<String> columnNames = new ArrayList<>(averageStatisticsResultFinal.keySet());
 
-        for (Map.Entry<String, Map<String, String>> entry : statisticsResult.entrySet()) {
-            String columnName = entry.getKey();
-            Map<String, String> columnData = entry.getValue();
-
-            String comment = columnData.get("comment");
-            String valueString = columnData.get("value");
-            Double value = Double.parseDouble(valueString); // Преобразуем значение в числовой формат
-
-            Label label = new Label(comment + ": " + valueString);
-            label.setFont(fontData);
-            label.setTextAlignment(TextAlignment.LEFT);
-            label.setWrapText(true);
-            label.setPadding(labelData);
-
-            // Проверяем, попадает ли значение в пределы дельты
-            boolean withinDelta = false;
-            if (averageStatisticsResultFinal.containsKey(columnName)) {
-                Double averageValue = averageStatisticsResultFinal.get(columnName);
-                Double deltaValue = Double.parseDouble(((TextField) VboxDelta.getChildren().get(columnNames.indexOf(columnName) * 2 + 1)).getText());
-
-                if (value >= averageValue - deltaValue && value <= averageValue + deltaValue) {
-                    withinDelta = true;
-                }
-            }
-
-            // Установка цвета в зависимости от того, попадает ли значение в пределы дельты
-            if (withinDelta) {
-                label.setTextFill(Color.GREEN); // Зеленый цвет, если значение попадает в пределы дельты
-            } else {
-                label.setTextFill(Color.RED); // Красный цвет, если значение не попадает в пределы дельты
-            }
-
-            VboxForData.getChildren().add(label);
-        }
+        Set<String> columnNames = averageStatisticsResultFinal.keySet();
 
         for (String columnName : columnNames) {
             Label label = new Label("Δ для: " + columnName);
@@ -118,6 +85,49 @@ public class StatisticsController {
 
             deltaTextField.setText("30");
             VboxDelta.getChildren().add(deltaTextField);
+        }
+
+        List<String> columnDataNames = new ArrayList<>();
+        for (String columnName : columnNames) {
+            if (statisticsResult.containsKey(columnName)) {
+                columnDataNames.add(columnName);
+            }
+        }
+
+        for (String columnName : columnDataNames) {
+            Map<String, String> columnData = statisticsResult.get(columnName);
+
+            String comment = columnData.get("comment");
+            String valueString = columnData.get("value");
+            valueString = valueString.replaceAll("%", "");
+            Double value = Double.parseDouble(valueString);
+
+
+            Label label = new Label(comment + ": " + valueString);
+            label.setFont(fontData);
+            label.setTextAlignment(TextAlignment.LEFT);
+            label.setWrapText(true);
+            label.setPadding(labelData);
+
+            boolean withinDelta = false;
+            if (averageStatisticsResultFinal.containsKey(columnName)) {
+
+                Double averageValue = averageStatisticsResultFinal.get(columnName);
+                Double deltaValue = Double.parseDouble(((TextField) VboxDelta.getChildren().get(columnDataNames.indexOf(columnName) * 2 + 1)).getText());
+
+
+                if (value >= averageValue - deltaValue && value <= averageValue + deltaValue) {
+                    withinDelta = true;
+                }
+            }
+
+            if (withinDelta) {
+                label.setTextFill(Color.GREEN);
+            } else {
+                label.setTextFill(Color.RED);
+            }
+
+            VboxForData.getChildren().add(label);
         }
     }
 
