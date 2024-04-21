@@ -442,7 +442,7 @@ public class DatabaseHandler {
         try (Connection connection = connect(schema.getSchemaName())) {
             if (connection != null) {
                 try (Statement statement = connection.createStatement()) {
-                    ResultSet resultSet = statement.executeQuery("SELECT * FROM " + schema.getSchemaName() + "." + tableName +  " WHERE trialcode != 'CRTTpractice'");
+                    ResultSet resultSet = statement.executeQuery("SELECT * FROM " + schema.getSchemaName() + "." + tableName + " WHERE trialcode != 'CRTTpractice'");
                     while (resultSet.next()) {
                         OddBallData data = new OddBallData();
                         data.setDate(resultSet.getString("date"));
@@ -529,4 +529,105 @@ public class DatabaseHandler {
 
         return averageValuesMap;
     }
+
+    public static int countByGroup(DatabaseSchema schema, boolean isMaleSelected, boolean isFemaleSelected, int ageLowerBound, int ageUpperBound) {
+        int count = 0;
+
+        try (Connection connection = connect(schema.getSchemaName())) {
+            if (connection != null) {
+                String query = "SELECT COUNT(*) FROM summary_table WHERE CAST(REPLACE(SPLIT_PART(source_table_name, '_', 3), '%', '') AS DECIMAL(10,0)) BETWEEN ? AND ?";
+
+                if (isMaleSelected && isFemaleSelected) {
+                    query += " AND (source_table_name LIKE '%_М_%' OR source_table_name LIKE '%_Ж_%')";
+                } else if (!isMaleSelected && !isFemaleSelected) {
+                    query += " AND NOT (source_table_name LIKE '%_М_%' OR source_table_name LIKE '%_Ж_%')";
+                } else if (isMaleSelected) {
+                    query += " AND source_table_name LIKE '%_М_%'";
+                } else if (isFemaleSelected) {
+                    query += " AND source_table_name LIKE '%_Ж_%'";
+                }
+
+                try (PreparedStatement statement = connection.prepareStatement(query)) {
+                    statement.setInt(1, ageLowerBound);
+                    statement.setInt(2, ageUpperBound);
+                    ResultSet resultSet = statement.executeQuery();
+
+                    if (resultSet.next()) {
+                        count = resultSet.getInt(1);
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return count;
+    }
+
+    public static Map<String, Double> getStandardDeviationStatistics(DatabaseSchema schema, boolean isMaleSelected, boolean isFemaleSelected, int ageLowerBound, int ageUpperBound, Map<String, Double> averageStatisticsResultFinal, int countByGroupFutureFinal) {
+        Map<String, Double> stdDeviationValuesMap = new HashMap<>();
+
+        try (Connection connection = connect(schema.getSchemaName())) {
+            if (connection != null) {
+                String query = "SELECT ";
+
+                List<String> columnNames = getColumnNames(schema, "summary_table");
+                for (String columnName : columnNames) {
+                    if (!columnName.equals("source_table_name")) {
+                        query += "SQRT(SUM(POWER(CAST(REPLACE(REPLACE(" + columnName + ", '%', ''), ',', '.') AS DECIMAL(10,2)) - ?, 2)) / ?) as " + columnName + ", ";
+                    }
+                }
+                query = query.substring(0, query.length() - 2);
+                query += " FROM summary_table";
+
+                query += " WHERE CAST(REPLACE(SPLIT_PART(source_table_name, '_', 3), '%', '') AS DECIMAL(10,0)) BETWEEN ? AND ?";
+
+                if (isMaleSelected && isFemaleSelected) {
+                    query += " AND (source_table_name LIKE '%_М_%' OR source_table_name LIKE '%_Ж_%')";
+                } else if (!isMaleSelected && !isFemaleSelected) {
+                    query += " AND NOT (source_table_name LIKE '%_М_%' OR source_table_name LIKE '%_Ж_%')";
+                } else if (isMaleSelected) {
+                    query += " AND source_table_name LIKE '%_М_%'";
+                } else if (isFemaleSelected) {
+                    query += " AND source_table_name LIKE '%_Ж_%'";
+                }
+
+                try (PreparedStatement statement = connection.prepareStatement(query)) {
+                    int parameterIndex = 1;
+
+                    for (String columnName : columnNames) {
+                        if (!columnName.equals("source_table_name")) {
+                            Double average = averageStatisticsResultFinal.get(columnName);
+                            if (average != null) {
+                                statement.setDouble(parameterIndex, average);
+                                statement.setInt(parameterIndex + 1, countByGroupFutureFinal);
+
+                                parameterIndex += 2;
+                            }
+                        }
+                    }
+
+                    statement.setInt(parameterIndex, ageLowerBound);
+                    statement.setInt(parameterIndex + 1, ageUpperBound);
+
+                    ResultSet resultSet = statement.executeQuery();
+                    ResultSetMetaData metaData = resultSet.getMetaData();
+                    int columnCount = metaData.getColumnCount();
+
+                    if (resultSet.next()) {
+                        for (int i = 1; i <= columnCount; i++) {
+                            String columnName = metaData.getColumnName(i);
+                            double columnStdDev = resultSet.getDouble(i);
+                            stdDeviationValuesMap.put(columnName, columnStdDev);
+                        }
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return stdDeviationValuesMap;
+    }
+
 }

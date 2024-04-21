@@ -142,6 +142,6 @@ public class HuntStatisticsCalculator {
                 .mapToDouble(data -> Math.pow(Double.parseDouble(data.getLatency()) - averageLatency, 2))
                 .sum();
 
-        return Math.sqrt(sumOfSquaredDifferences / correctPresses.size());
+        return Math.sqrt(sumOfSquaredDifferences / correctPresses.size() - 1);
     }
 }

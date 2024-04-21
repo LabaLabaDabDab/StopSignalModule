@@ -113,6 +113,6 @@ public class OddBallStatisticsCalculator {
                         (data.getTrialcode().equals("baseline") && data.getResponse().equals("0")))
                 .mapToDouble(data -> Math.pow(Double.parseDouble(data.getLatency()) - meanReactionTime, 2))
                 .sum();
-        return Math.sqrt(sumOfSquaredDifferences / countCorrectResponse);
+        return Math.sqrt(sumOfSquaredDifferences / countCorrectResponse - 1);
     }
 }

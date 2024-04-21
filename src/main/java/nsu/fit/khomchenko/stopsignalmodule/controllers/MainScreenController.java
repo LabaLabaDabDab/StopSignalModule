@@ -19,7 +19,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.*;
 
-import static nsu.fit.khomchenko.stopsignalmodule.DatabaseHandler.getAverageStatistics;
+import static nsu.fit.khomchenko.stopsignalmodule.DatabaseHandler.*;
 
 public class MainScreenController {
     @FXML
@@ -131,11 +131,13 @@ public class MainScreenController {
                         String tableName = tableNameOptional.get();
                         CompletableFuture<Map<String, Double>> averageStatisticsFuture = null;
                         CompletableFuture<Map<String, Map<String, String>>> statisticsResultFuture = null;
+                        CompletableFuture<Integer> countByGroupFuture = null;
 
                         switch (selectedSchema) {
                             case HUNT -> {
                                 List<HuntData> huntDataList = DatabaseHandler.getHuntDataForTable(selectedSchema, tableName);
                                 if (!huntDataList.isEmpty()) {
+                                    countByGroupFuture = CompletableFuture.supplyAsync(() -> countByGroup(selectedSchema, true, true, 0, 120));
                                     averageStatisticsFuture = CompletableFuture.supplyAsync(() -> getAverageStatistics(selectedSchema, true, true, 0, 120));
                                     statisticsResultFuture = CompletableFuture.supplyAsync(() -> HuntStatisticsCalculator.calculateStatistics(huntDataList, tableName, selectedSchema, false));
                                 } else {
@@ -145,6 +147,7 @@ public class MainScreenController {
                             case ODD_BALL_EASY, ODD_BALL_HARD -> {
                                 List<OddBallData> oddBallDataList = DatabaseHandler.getOddBallDataForSchema(selectedSchema, tableName);
                                 if (!oddBallDataList.isEmpty()) {
+                                    countByGroupFuture = CompletableFuture.supplyAsync(() -> countByGroup(selectedSchema, true, true, 0, 120));
                                     averageStatisticsFuture = CompletableFuture.supplyAsync(() -> getAverageStatistics(selectedSchema, true, true, 0, 120));
                                     statisticsResultFuture = CompletableFuture.supplyAsync(() -> OddBallStatisticsCalculator.calculateStatistics(oddBallDataList, tableName, selectedSchema, false));
                                 } else {
@@ -155,23 +158,27 @@ public class MainScreenController {
                         }
 
                         if (averageStatisticsFuture != null && statisticsResultFuture != null) {
-                            CompletableFuture<Void> combinedFuture = CompletableFuture.allOf(averageStatisticsFuture, statisticsResultFuture);
+                            CompletableFuture<Void> combinedFuture = CompletableFuture.allOf(averageStatisticsFuture, statisticsResultFuture, countByGroupFuture);
 
                             final CompletableFuture<Map<String, Double>> finalAverageStatisticsFuture = averageStatisticsFuture;
                             final CompletableFuture<Map<String, Map<String, String>>> finalStatisticsResultFuture = statisticsResultFuture;
+                            final CompletableFuture<Integer> finalCountByGroupFuture = countByGroupFuture;
 
                             combinedFuture.thenRunAsync(() -> {
                                 try {
                                     Map<String, Double> averageStatisticsResultFinal = finalAverageStatisticsFuture.get();
                                     Map<String, Map<String, String>> statisticsResultFinal = finalStatisticsResultFuture.get();
+                                    Integer countByGroupFutureFinal = finalCountByGroupFuture.get();
+
+                                    Map<String, Double> standardDeviation = getStandardDeviationStatistics(selectedSchema, true, true, 0, 120, averageStatisticsResultFinal, countByGroupFutureFinal);
+
                                     mainController.switchToStatistic();
-                                    mainController.getStatisticsController().displayStatistics(statisticsResultFinal, averageStatisticsResultFinal);
+                                    mainController.getStatisticsController().displayStatistics(statisticsResultFinal, averageStatisticsResultFinal, standardDeviation);
 
                                 } catch (InterruptedException | ExecutionException e) {
                                     e.printStackTrace();
                                 }
                             }, Platform::runLater);
-
                         }
                     } else {
                         showAlert("Не удалось получить название таблицы.");
