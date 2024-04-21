@@ -4,6 +4,7 @@ module nsu.fit.khomchenko.stopsignalmodule {
     requires java.sql;
     requires org.postgresql.jdbc;
     requires lombok;
+    requires java.prefs;
 
 
     opens nsu.fit.khomchenko.stopsignalmodule to javafx.fxml;

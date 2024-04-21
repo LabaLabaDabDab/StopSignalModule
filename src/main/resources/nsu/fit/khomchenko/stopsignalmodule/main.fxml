@@ -24,6 +24,7 @@
                                         <MenuItem mnemonicParsing="false" onAction="#setDarkTheme" text="Тёмная" />
                                     </items>
                                 </Menu>
+                                <MenuItem mnemonicParsing="false" onAction="#handleDatabaseSettings" text="Подключение к БД" />
                             </items>
                         </Menu>
                         <MenuItem fx:id="closeMenuItem" mnemonicParsing="false" onAction="#handleClose" text="Закрыть" visible="false" />

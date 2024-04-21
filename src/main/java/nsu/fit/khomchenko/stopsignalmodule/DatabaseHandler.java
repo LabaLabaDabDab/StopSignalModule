@@ -1,5 +1,6 @@
 package nsu.fit.khomchenko.stopsignalmodule;
 
+import javafx.scene.control.Alert;
 import nsu.fit.khomchenko.stopsignalmodule.data.HuntData;
 import nsu.fit.khomchenko.stopsignalmodule.data.OddBallData;
 
@@ -11,9 +12,21 @@ import java.util.List;
 import java.util.Map;
 
 public class DatabaseHandler {
-    private static final String JDBC_URL = "jdbc:postgresql://localhost:5432/postgres";
-    private static final String USERNAME = "postgres";
-    private static final String PASSWORD = "1";
+    public static String jdbcUrl = "jdbc:postgresql://localhost:5432/postgres";
+    private static String username = "postgres";
+    private static String password = "1";
+
+    public static void setJdbcUrl(String newJdbcUrl) {
+        jdbcUrl = newJdbcUrl;
+    }
+
+    public static void setUsername(String newUsername) {
+        username = newUsername;
+    }
+
+    public static void setPassword(String newPassword) {
+        password = newPassword;
+    }
 
     static {
         try {
@@ -25,23 +38,32 @@ public class DatabaseHandler {
 
     public static Connection connect() {
         try {
-            return DriverManager.getConnection(JDBC_URL, USERNAME, PASSWORD);
+            return DriverManager.getConnection(jdbcUrl, username, password);
         } catch (SQLException e) {
             e.printStackTrace();
             System.err.println("Failed to connect to the database: " + e.getMessage());
+            showErrorAlert(e.getMessage(), e.getMessage());
             return null;
         }
     }
 
+    private static void showErrorAlert(String title, String message) {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle("Error");
+        alert.setHeaderText(title);
+        alert.setContentText(message);
+        alert.showAndWait();
+    }
+
     public static Connection connect(String schemaName) {
         createSchema(schemaName);
-
         try {
-            String jdbcUrl = JDBC_URL + "?currentSchema=" + schemaName;
-            return DriverManager.getConnection(jdbcUrl, USERNAME, PASSWORD);
+            String jdbcUrlNew = jdbcUrl + "?currentSchema=" + schemaName;
+            return DriverManager.getConnection(jdbcUrlNew, username, password);
         } catch (SQLException e) {
             e.printStackTrace();
             System.err.println("Failed to connect to the database: " + e.getMessage());
+            showErrorAlert("Failed to connect to the database", e.getMessage());
             return null;
         }
     }
@@ -507,6 +529,4 @@ public class DatabaseHandler {
 
         return averageValuesMap;
     }
-
-
 }

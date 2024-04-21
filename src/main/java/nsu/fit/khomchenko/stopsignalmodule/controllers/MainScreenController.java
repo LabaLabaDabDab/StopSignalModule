@@ -108,7 +108,6 @@ public class MainScreenController {
         }, Platform::runLater);
     }
 
-
     @FXML
     private void handleStartButtonAction(ActionEvent actionEvent) {
         DatabaseSchema selectedSchema = schemaChoiceComboBox.getValue();

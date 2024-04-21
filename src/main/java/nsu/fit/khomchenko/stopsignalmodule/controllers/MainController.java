@@ -6,11 +6,14 @@ import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.geometry.Insets;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.GridPane;
 import javafx.stage.FileChooser;
+import javafx.util.Pair;
 import nsu.fit.khomchenko.stopsignalmodule.DatabaseHandler;
 import nsu.fit.khomchenko.stopsignalmodule.DatabaseSchema;
 import nsu.fit.khomchenko.stopsignalmodule.data.HuntData;
@@ -20,10 +23,15 @@ import nsu.fit.khomchenko.stopsignalmodule.utils.OddBallStatisticsCalculator;
 
 import java.io.File;
 import java.io.IOException;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
+import java.util.prefs.Preferences;
+
 
 public class MainController {
     @FXML
@@ -392,22 +400,6 @@ public class MainController {
         }
     }
 
-    public void initializeStatistic() {
-        calculateAndCreateStatistics(DatabaseSchema.HUNT);
-        calculateAndCreateStatistics(DatabaseSchema.ODD_BALL_EASY);
-        calculateAndCreateStatistics(DatabaseSchema.ODD_BALL_HARD);
-        calculateAndCreateStatistics(DatabaseSchema.STROOP);
-    }
-
-    @FXML
-    private void initialize() {
-        mainController = this;
-        loadFXML("mainScreen");
-        initializeStatistic();
-
-        Runtime.getRuntime().addShutdownHook(new Thread(this::deleteTestTablesFromAllSchemas));
-    }
-
     private void deleteTestTablesFromAllSchemas() {
         for (DatabaseSchema schema : DatabaseSchema.values()) {
             List<String> tableNames = DatabaseHandler.getAllTables(schema);
@@ -425,5 +417,134 @@ public class MainController {
                 }
             });
         }
+    }
+
+    public void handleDatabaseSettings(ActionEvent actionEvent) {
+        Dialog<ArrayList<String>> dialog = new Dialog<>();
+        dialog.setTitle("Настройки подключения к БД");
+        dialog.setHeaderText("Введите данные для подключения к базе данных:");
+
+        ButtonType loginButtonType = new ButtonType("OK", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(loginButtonType, ButtonType.CANCEL);
+
+        GridPane gridPane = new GridPane();
+        gridPane.setHgap(10);
+        gridPane.setVgap(10);
+        gridPane.setPadding(new Insets(20, 150, 10, 10));
+
+        TextField hostField = new TextField();
+        hostField.setPromptText("Хост");
+        TextField portField = new TextField();
+        portField.setPromptText("Порт");
+        TextField databaseField = new TextField();
+        databaseField.setPromptText("Имя базы данных");
+        TextField usernameField = new TextField();
+        usernameField.setPromptText("Имя пользователя");
+        PasswordField passwordField = new PasswordField();
+        passwordField.setPromptText("Пароль");
+
+        gridPane.add(new Label("Хост:"), 0, 0);
+        gridPane.add(hostField, 1, 0);
+        gridPane.add(new Label("Порт:"), 0, 1);
+        gridPane.add(portField, 1, 1);
+        gridPane.add(new Label("Имя базы данных:"), 0, 2);
+        gridPane.add(databaseField, 1, 2);
+        gridPane.add(new Label("Имя пользователя:"), 0, 3);
+        gridPane.add(usernameField, 1, 3);
+        gridPane.add(new Label("Пароль:"), 0, 4);
+        gridPane.add(passwordField, 1, 4);
+
+        dialog.getDialogPane().setContent(gridPane);
+
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton == loginButtonType) {
+                ArrayList<String> data = new ArrayList<>();
+                data.add(hostField.getText());
+                data.add(portField.getText());
+                data.add(databaseField.getText());
+                data.add(passwordField.getText());
+                return data;
+            }
+            return null;
+        });
+
+        Optional<ArrayList<String>> result = dialog.showAndWait();
+        result.ifPresent(data -> {
+            String enteredHost = data.get(0);
+            String enteredPort = data.get(1);
+            String enteredDatabase = data.get(2);
+            String enteredUser = usernameField.getText();
+            String enteredPassword = data.get(3);
+
+            System.out.println("Host: " + enteredHost);
+            System.out.println("Port: " + enteredPort);
+            System.out.println("Database: " + enteredDatabase);
+            System.out.println("User: " + enteredUser);
+            System.out.println("Password: " + enteredPassword);
+
+            try {
+                String fullUrl = "jdbc:postgresql://" + enteredHost + ":" + enteredPort + "/" + enteredDatabase;
+                Connection connection = DriverManager.getConnection(fullUrl, enteredUser, enteredPassword);
+                showAlert(Alert.AlertType.INFORMATION, "Успех", "Подключение к базе данных успешно");
+
+                changeDatabaseSettings(fullUrl, enteredUser, enteredPassword);
+
+                DatabaseHandler.setJdbcUrl(fullUrl);
+                DatabaseHandler.setUsername(enteredUser);
+                DatabaseHandler.setPassword(enteredPassword);
+
+                showAlert(Alert.AlertType.INFORMATION, "Успех", "Настройки успешно изменены");
+            } catch (SQLException e) {
+                e.printStackTrace();
+                showErrorAlert("Ошибка", "Не удалось подключиться к базе данных: " + e.getMessage());
+            }
+        });
+    }
+
+    private void showAlert(Alert.AlertType alertType, String title, String message) {
+        Alert alert = new Alert(alertType);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
+    }
+
+    private void showErrorAlert(String title, String message) {
+        showAlert(Alert.AlertType.ERROR, title, message);
+    }
+
+    public void changeDatabaseSettings(String newJdbcUrl, String newUsername, String newPassword) {
+        Preferences prefs = Preferences.userNodeForPackage(MainController.class);
+        prefs.put("jdbcUrl", newJdbcUrl);
+        prefs.put("username", newUsername);
+        prefs.put("password", newPassword);
+    }
+
+    private void loadDatabaseSettings() {
+        Preferences prefs = Preferences.userNodeForPackage(MainController.class);
+        String jdbcUrl = prefs.get("jdbcUrl", "");
+        String username = prefs.get("username", "");
+        String password = prefs.get("password", "");
+
+        DatabaseHandler.setJdbcUrl(jdbcUrl);
+        DatabaseHandler.setUsername(username);
+        DatabaseHandler.setPassword(password);
+    }
+
+    public void initializeStatistic() {
+        calculateAndCreateStatistics(DatabaseSchema.HUNT);
+        calculateAndCreateStatistics(DatabaseSchema.ODD_BALL_EASY);
+        calculateAndCreateStatistics(DatabaseSchema.ODD_BALL_HARD);
+        calculateAndCreateStatistics(DatabaseSchema.STROOP);
+    }
+
+    @FXML
+    private void initialize() {
+        mainController = this;
+        loadFXML("mainScreen");
+        initializeStatistic();
+        loadDatabaseSettings();
+
+        Runtime.getRuntime().addShutdownHook(new Thread(this::deleteTestTablesFromAllSchemas));
     }
 }
