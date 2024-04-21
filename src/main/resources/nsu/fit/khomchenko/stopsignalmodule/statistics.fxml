@@ -49,10 +49,11 @@
                                 </VBox>
                             </children>
                         </HBox>
-                        <Button alignment="CENTER" contentDisplay="TOP" minWidth="-Infinity" mnemonicParsing="false" prefHeight="31.0" prefWidth="390.0" text="ПРИМЕНИТЬ" textAlignment="CENTER">
+                        <Button fx:id="applyButton" onAction="#applyFilters" alignment="CENTER" contentDisplay="TOP" minWidth="-Infinity" mnemonicParsing="false" prefHeight="31.0" prefWidth="362.0" text="ПРИМЕНИТЬ" textAlignment="CENTER">
                             <font>
                                 <Font size="15.0" />
-                            </font></Button>
+                            </font>
+                        </Button>
                     </children>
                 </VBox>
                 <VBox fx:id="VboxForData" prefHeight="400.0" prefWidth="402.0" HBox.hgrow="ALWAYS">

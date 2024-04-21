@@ -1,10 +1,10 @@
 package nsu.fit.khomchenko.stopsignalmodule.controllers;
 
+import javafx.application.Platform;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
-import javafx.scene.control.CheckBox;
-import javafx.scene.control.Label;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
@@ -18,6 +18,8 @@ import org.apache.commons.math3.distribution.TDistribution;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
+import static nsu.fit.khomchenko.stopsignalmodule.DatabaseHandler.*;
+
 public class StatisticsController {
     @FXML
     public TextField ageLowerTextField;
@@ -26,9 +28,9 @@ public class StatisticsController {
 
     @FXML
     public VBox VboxForData;
-
     @FXML
-    public VBox VboxDelta;
+    public Button applyButton;
+
 
     @FXML
     private CheckBox maleCheckBox;
@@ -36,15 +38,15 @@ public class StatisticsController {
     @FXML
     private CheckBox femaleCheckBox;
 
-
     private DatabaseSchema selectedSchema;
 
     private DatabaseHandler databaseHandler;
 
+    private Map<String, Map<String, String>> statisticsResult;
+
     @FXML
     private MainController mainController;
 
-    private CompletableFuture<List<Double>> averageStatisticsFuture;
 
     public void setSelectedSchema(DatabaseSchema schema) {
         this.selectedSchema = schema;
@@ -52,6 +54,10 @@ public class StatisticsController {
 
     public void setMainController(MainController mainController) {
         this.mainController = mainController;
+    }
+
+    public void setStatisticsResult(Map<String, Map<String, String>> statisticsResult) {
+        this.statisticsResult = statisticsResult;
     }
 
     public Map<String, Double> calculateConfidenceInterval(Map<String, Double> averageStatistics, Map<String, Double> standardDeviation, double confidenceLevel) {
@@ -76,13 +82,60 @@ public class StatisticsController {
         return confidenceInterval;
     }
 
-
-    public void displayStatistics(Map<String, Map<String, String>> statisticsResult, Map<String, Double> averageStatisticsResultFinal , Map<String, Double> standardDeviation) {
+    public void displayStatisticsLoading() {
         VboxForData.getChildren().clear();
-        VboxDelta.getChildren().clear();
 
-        Font fontData = Font.font("Arial", FontWeight.BOLD, 20);
+        ProgressIndicator loadingIndicator = new ProgressIndicator();
+        loadingIndicator.setProgress(-1);
+        VboxForData.getChildren().add(loadingIndicator);
+    }
+
+    public void displayStatistics(Map<String, Double> averageStatisticsResultFinal , Map<String, Double> standardDeviation) {
+        VboxForData.getChildren().clear();
+
+        if (statisticsResult == null || averageStatisticsResultFinal == null || standardDeviation == null) {
+            displayStatisticsLoading();
+            return;
+        }
+
+        Map<String, String> participantInfo = statisticsResult.get("participant_info");
+        if (participantInfo == null) {
+            System.err.println("Отсутствует информация об испытуемом.");
+            return;
+        }
+
+        String gender = participantInfo.get("gender");
+        String ageString = participantInfo.get("age");
+        String testName = participantInfo.get("testName");
+
+        if (gender == null || ageString == null || testName == null) {
+            System.err.println("Отсутствует пол, возраст или имя испытуемого.");
+            return;
+        }
+
+        int age = 0;
+        try {
+            age = Integer.parseInt(ageString);
+        } catch (NumberFormatException e) {
+            System.err.println("Неверный формат возраста.");
+            e.printStackTrace();
+        }
+
+        Label participantInfoLabel = new Label("Информация об испытуемом:");
+        participantInfoLabel.setFont(Font.font("Arial", FontWeight.BOLD, 18));
+        participantInfoLabel.setPadding(new Insets(5));
+        VboxForData.getChildren().add(participantInfoLabel);
+
+        Label infoLabel = new Label("Пол: " + gender + ", Имя: " + testName + ", Возраст: " + age);
+        infoLabel.setFont(Font.font("Arial", FontWeight.BOLD, 18));
+        infoLabel.setPadding(new Insets(5));
+        VboxForData.getChildren().add(infoLabel);
+
+        Font fontData = Font.font("Arial", FontWeight.BOLD, 25);
         Insets labelData = new Insets(5);
+
+        Font fontStatisticData = Font.font("Arial", FontWeight.BOLD, 16);
+        Insets labelStatisticData = new Insets(5);
 
 
         Set<String> columnNames = averageStatisticsResultFinal.keySet();
@@ -128,37 +181,74 @@ public class StatisticsController {
         }
 
         VboxForData.getChildren().add(new Label(" "));
+        VboxForData.getChildren().add(new Label(" "));
+
+        Label labelInfo = new Label("Статистика для группы: ");
+        labelInfo.setFont(fontData);
+        labelInfo.setTextAlignment(TextAlignment.LEFT);
+        labelInfo.setWrapText(true);
+        labelInfo.setPadding(labelData);
+
+        VboxForData.getChildren().add(labelInfo);
+
 
         for (Map.Entry<String, Double> entry : averageStatisticsResultFinal.entrySet()) {
             String columnName = entry.getKey();
             Double averageValue = entry.getValue();
 
             Map<String, String> columnData = statisticsResult.get(columnName);
-            String comment = "";
-            if (columnData != null) {
-                comment = columnData.get("comment");
-            }
+            String comment = (columnData != null) ? columnData.getOrDefault("comment", "") : "";
 
             Label averageLabel = new Label(comment + " (Среднее): " + averageValue);
-            averageLabel.setFont(fontData);
+            averageLabel.setFont(fontStatisticData);
             averageLabel.setTextAlignment(TextAlignment.LEFT);
             averageLabel.setWrapText(true);
-            averageLabel.setPadding(labelData);
+            averageLabel.setPadding(labelStatisticData);
 
-            Double stdDeviation = standardDeviation.get(columnName);
+            VboxForData.getChildren().add(averageLabel);
+        }
+
+        VboxForData.getChildren().add(new Label(" "));
+
+        for (Map.Entry<String, Double> entry : standardDeviation.entrySet()) {
+            String columnName = entry.getKey();
+            Double stdDeviation = entry.getValue();
+
+            Map<String, String> columnData = statisticsResult.get(columnName);
+            String comment = (columnData != null) ? columnData.getOrDefault("comment", "") : "";
 
             Label stdDevLabel = new Label(comment + " (Стандартное отклонение): " + stdDeviation);
-            stdDevLabel.setFont(fontData);
+            stdDevLabel.setFont(fontStatisticData);
             stdDevLabel.setTextAlignment(TextAlignment.LEFT);
             stdDevLabel.setWrapText(true);
-            stdDevLabel.setPadding(labelData);
+            stdDevLabel.setPadding(labelStatisticData);
 
-            VboxForData.getChildren().addAll(averageLabel, stdDevLabel);
+            VboxForData.getChildren().add(stdDevLabel);
 
             Region separator = new Region();
-            separator.setPrefHeight(200);
+            separator.setPrefHeight(180);
             VboxForData.getChildren().add(separator);
         }
+
+    }
+
+    @FXML
+    private void applyFilters(ActionEvent event) {
+        int lowerAge = Integer.parseInt(ageLowerTextField.getText());
+        int upperAge = Integer.parseInt(ageUpperTextField.getText());
+
+        boolean isMaleSelected = maleCheckBox.isSelected();
+        boolean isFemaleSelected = femaleCheckBox.isSelected();
+
+        CompletableFuture<Integer> countByGroupFuture = CompletableFuture.supplyAsync(() -> countByGroup(selectedSchema, isMaleSelected, isFemaleSelected, lowerAge, upperAge));
+        CompletableFuture<Map<String, Double>> averageStatisticsFuture = CompletableFuture.supplyAsync(() -> getAverageStatistics(selectedSchema, isMaleSelected, isFemaleSelected, lowerAge, upperAge));
+
+        CompletableFuture<Map<String, Double>> standardDeviationFuture = CompletableFuture.allOf(countByGroupFuture, averageStatisticsFuture)
+                .thenApplyAsync(ignored -> getStandardDeviationStatistics(selectedSchema, isMaleSelected, isFemaleSelected, lowerAge, upperAge, averageStatisticsFuture.join(), countByGroupFuture.join()));
+
+        standardDeviationFuture.thenAcceptAsync(standardDeviation -> {
+            Platform.runLater(() -> displayStatistics(averageStatisticsFuture.join(), standardDeviation));
+        });
     }
 
     @FXML
@@ -167,6 +257,6 @@ public class StatisticsController {
         femaleCheckBox.setSelected(true);
 
         ageLowerTextField.setText("0");
-        ageUpperTextField.setText("120");
+        ageUpperTextField.setText("118");
     }
 }

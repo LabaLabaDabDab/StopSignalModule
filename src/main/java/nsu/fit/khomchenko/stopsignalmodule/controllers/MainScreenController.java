@@ -173,7 +173,9 @@ public class MainScreenController {
                                     Map<String, Double> standardDeviation = getStandardDeviationStatistics(selectedSchema, true, true, 0, 120, averageStatisticsResultFinal, countByGroupFutureFinal);
 
                                     mainController.switchToStatistic();
-                                    mainController.getStatisticsController().displayStatistics(statisticsResultFinal, averageStatisticsResultFinal, standardDeviation);
+                                    mainController.getStatisticsController().setStatisticsResult(statisticsResultFinal);
+                                    mainController.getStatisticsController().setSelectedSchema(selectedSchema);
+                                    mainController.getStatisticsController().displayStatistics(averageStatisticsResultFinal, standardDeviation);
 
                                 } catch (InterruptedException | ExecutionException e) {
                                     e.printStackTrace();

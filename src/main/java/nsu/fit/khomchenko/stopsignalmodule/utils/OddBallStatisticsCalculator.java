@@ -15,7 +15,6 @@ public class OddBallStatisticsCalculator {
 
         Map<String, Map<String, String>> statisticsMap = new HashMap<>();
 
-        // Добавляем комментарии и значения для каждой статистики
         Map<String, String> incorrectPressesComment = new HashMap<>();
         incorrectPressesComment.put("comment", "Процент некорректных нажатий после нецелевого тона");
         incorrectPressesComment.put("value", incorrectPressesOffTargetTonePercentage + "%");
