@@ -57,14 +57,14 @@ public class HuntStatisticsCalculator {
         statisticsMap.put("successful_stops_percentage", successfulStopsData);
 
         Map<String, String> missedPressesData = new HashMap<>();
-        missedPressesData.put("comment", "Процент пропущенных нажатий");
+        missedPressesData.put("comment", "Количество пропущенных нажатий");
         missedPressesData.put("value", missedPresses + "%");
-        statisticsMap.put("missed_presses_percentage", missedPressesData);
+        statisticsMap.put("missed_presses_count", missedPressesData);
 
         Map<String, String> incorrectPressesData = new HashMap<>();
-        incorrectPressesData.put("comment", "Процент неправильных нажатий");
+        incorrectPressesData.put("comment", "Количество неправильных нажатий");
         incorrectPressesData.put("value", incorrectPresses + "%");
-        statisticsMap.put("incorrect_presses_percentage", incorrectPressesData);
+        statisticsMap.put("incorrect_presses_count", incorrectPressesData);
 
         Map<String, String> correctPressesPercentageData = new HashMap<>();
         correctPressesPercentageData.put("comment", "Процент правильных нажатий");
@@ -77,7 +77,7 @@ public class HuntStatisticsCalculator {
         statisticsMap.put("average_latency_for_correct_presses", averageLatencyForCorrectPressesData);
 
         Map<String, String> individualTimeDispersionData = new HashMap<>();
-        individualTimeDispersionData.put("comment", "Индивидуальная дисперсия по времени");
+        individualTimeDispersionData.put("comment", "Среднее квадратичное отклонение по времени для правильных нажатий");
         individualTimeDispersionData.put("value", String.valueOf(individualTimeDispersion));
         statisticsMap.put("individual_time_dispersion", individualTimeDispersionData);
 
@@ -93,8 +93,8 @@ public class HuntStatisticsCalculator {
 
             List<String> columnNames = Arrays.asList(
                     "successful_stops_percentage",
-                    "missed_presses_percentage",
-                    "incorrect_presses_percentage",
+                    "missed_presses_count",
+                    "incorrect_presses_count",
                     "correct_presses_percentage",
                     "average_latency_for_correct_presses",
                     "individual_time_dispersion"
@@ -122,20 +122,18 @@ public class HuntStatisticsCalculator {
         return (double) successfulStopsCount / filteredData.size() * 100;
     }
 
-    //Процент пропущенных нажатия
+    //Количество пропущенных нажатий
     private static double countMissedPresses(List<HuntData> dataList) {
-        long correctPressesCount = dataList.stream()
+        return dataList.stream()
                 .filter(data -> Integer.parseInt(data.getLatency()) == 750)
                 .count();
-        return (double) correctPressesCount / dataList.size() * 100;
     }
 
-    //Процент неправильных нажатия
+    //Количество неправильных нажатий
     private static double countIncorrectPresses(List<HuntData> dataList) {
-        long correctPressesCount = dataList.stream()
+        return dataList.stream()
                 .filter(data -> Integer.parseInt(data.getLatency()) < 750 && Integer.parseInt(data.getCorrect()) == 0)
                 .count();
-        return (double) correctPressesCount / dataList.size() * 100;
     }
 
 
@@ -161,7 +159,7 @@ public class HuntStatisticsCalculator {
         return totalLatency / correctPresses.size();
     }
 
-    //Индивидуальная дисперсия по времени(только для правильных) (среднее квадратичное отклонение по времени)
+    //среднее квадратичное отклонение по времени(только для правильных)
     private static double calculateIndividualTimeDispersion(List<HuntData> dataList) {
         List<HuntData> correctPresses = dataList.stream()
                 .filter(data -> Integer.parseInt(data.getLatency()) < 750 && Integer.parseInt(data.getCorrect()) == 1)

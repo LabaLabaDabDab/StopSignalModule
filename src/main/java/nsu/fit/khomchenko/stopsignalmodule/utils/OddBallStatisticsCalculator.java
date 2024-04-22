@@ -141,8 +141,6 @@ public class OddBallStatisticsCalculator {
         return (double) totalResponses / dataList.size();
     }
 
-
-
     //среднее время правильной реакции
     private static double calculateAverageReactionTime(List<OddBallData> dataList) {
         List<OddBallData> filteredData = dataList.stream()

@@ -257,6 +257,6 @@ public class StatisticsController {
         femaleCheckBox.setSelected(true);
 
         ageLowerTextField.setText("0");
-        ageUpperTextField.setText("118");
+        ageUpperTextField.setText("120");
     }
 }
