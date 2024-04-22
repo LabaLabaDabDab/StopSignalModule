@@ -157,13 +157,11 @@ public class MainController {
 
     public void handleDialogInterface(File selectedFile, DatabaseSchema selectedSchema) {
         TextInputDialog tableNameDialog = new TextInputDialog();
-        tableNameDialog.setTitle("Название таблицы");
-        tableNameDialog.setHeaderText("Введите базовое название таблицы:");
-        tableNameDialog.setContentText("Базовое название таблицы:");
+        tableNameDialog.setTitle("Испытуемый");
+        tableNameDialog.setHeaderText("Введите имя испытуемого:");
 
-        Optional<String> baseTableNameResult = tableNameDialog.showAndWait();
-        String baseTableName = baseTableNameResult.orElse("").trim();
-
+        Optional<String> testPerson = tableNameDialog.showAndWait();
+        String baseTableName = testPerson.orElse("").trim();
 
         String[] choices = {"М", "Ж"};
         ChoiceDialog<String> genderDialog = new ChoiceDialog<>("М", Arrays.asList(choices));
