@@ -6,10 +6,7 @@ import nsu.fit.khomchenko.stopsignalmodule.data.OddBallData;
 
 import java.io.*;
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class DatabaseHandler {
     public static String jdbcUrl = "jdbc:postgresql://localhost:5432/postgres";
@@ -119,12 +116,13 @@ public class DatabaseHandler {
         }
     }
 
-
     private static void saveDataRow(String tableName, String dataRow, String schemaName) {
         try (Connection connection = connect(schemaName)) {
             if (connection != null) {
                 try {
                     String[] values = dataRow.split("\t");
+
+                    boolean add100ToLatency = isAdd100ToLatency(schemaName);
 
                     StringBuilder sql = new StringBuilder("INSERT INTO " + schemaName + "." + tableName + " VALUES (");
                     for (int i = 0; i < values.length; i++) {
@@ -134,8 +132,14 @@ public class DatabaseHandler {
                     sql.append(")");
 
                     try (PreparedStatement preparedStatement = connection.prepareStatement(sql.toString())) {
+                        int parameterIndex = 1;
                         for (int i = 0; i < values.length; i++) {
-                            preparedStatement.setString(i + 1, values[i]);
+                            if (i == 6 && add100ToLatency) {
+                                int latencyValue = Integer.parseInt(values[i]) + 100;
+                                preparedStatement.setString(parameterIndex++, String.valueOf(latencyValue));
+                            } else {
+                                preparedStatement.setString(parameterIndex++, values[i]);
+                            }
                         }
                         preparedStatement.executeUpdate();
                     }
@@ -147,6 +151,11 @@ public class DatabaseHandler {
             e.printStackTrace();
         }
     }
+
+    private static boolean isAdd100ToLatency(String schemaName) {
+        return Objects.equals(schemaName, DatabaseSchema.ODD_BALL_EASY.getSchemaName()) || Objects.equals(schemaName, DatabaseSchema.ODD_BALL_HARD.getSchemaName());
+    }
+
 
     public static List<String> getAllTables(DatabaseSchema schema) {
         List<String> tableNames = new ArrayList<>();

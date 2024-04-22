@@ -12,8 +12,40 @@ public class OddBallStatisticsCalculator {
         double correctPressesTargetTonePercentage = calculateCorrectPressesPercentage(dataList);
         double averageReactionTime = calculateAverageReactionTime(dataList);
         double timeDispersion = calculateIndividualTimeDispersion(dataList);
+        double prematurePresses = calculatePrematurePresses(dataList);
 
         Map<String, Map<String, String>> statisticsMap = new HashMap<>();
+
+        String[] parts = tableName.split("_");
+        String gender = "";
+        int age = 0;
+        String testName = "";
+
+        if (parts.length >= 3) {
+            gender = parts[1];
+            try {
+                age = Integer.parseInt(parts[2]);
+            } catch (NumberFormatException e) {
+                e.printStackTrace();
+            }
+
+            StringBuilder testNameBuilder = new StringBuilder();
+            for (int i = 3; i < parts.length; i++) {
+                testNameBuilder.append(parts[i]);
+                if (i < parts.length - 1) {
+                    testNameBuilder.append("_");
+                }
+            }
+            testName = testNameBuilder.toString();
+        } else {
+            System.err.println("Некорректный формат имени таблицы.");
+        }
+
+        Map<String, String> participantInfo = new HashMap<>();
+        participantInfo.put("gender", gender);
+        participantInfo.put("age", String.valueOf(age));
+        participantInfo.put("testName", testName);
+        statisticsMap.put("participant_info", participantInfo);
 
         Map<String, String> incorrectPressesComment = new HashMap<>();
         incorrectPressesComment.put("comment", "Процент некорректных нажатий после нецелевого тона");
@@ -35,19 +67,26 @@ public class OddBallStatisticsCalculator {
         timeDispersionComment.put("value", String.valueOf(timeDispersion));
         statisticsMap.put("individual_time_dispersion", timeDispersionComment);
 
+        Map<String, String> prematurePressesComment = new HashMap<>();
+        prematurePressesComment.put("comment", "Среднее количество преждевременных нажатий");
+        prematurePressesComment.put("value", String.valueOf(prematurePresses));
+        statisticsMap.put("premature_presses", prematurePressesComment);
+
         if (saveToDatabase) {
             List<Double> values = Arrays.asList(
                     incorrectPressesOffTargetTonePercentage,
                     correctPressesTargetTonePercentage,
                     averageReactionTime,
-                    timeDispersion
+                    timeDispersion,
+                    prematurePresses
             );
 
             List<String> columnNames = Arrays.asList(
                     "incorrect_presses_off_target_tone_percentage",
                     "correct_presses_target_tone_percentage",
                     "average_reaction_time",
-                    "individual_time_dispersion"
+                    "individual_time_dispersion",
+                    "premature_presses"
             );
 
             DatabaseHandler.saveStatisticsToSummaryTable(schema, tableName, columnNames, values);
@@ -55,8 +94,6 @@ public class OddBallStatisticsCalculator {
 
         return statisticsMap;
     }
-
-
 
     //процент некорректных нажатий после нецелевого тона
     private static double calculateIncorrectPressesPercentage(List<OddBallData> dataList) {
@@ -83,6 +120,28 @@ public class OddBallStatisticsCalculator {
 
         return (double) (incorrectResponses * 100) / totalResponses;
     }
+
+    //Преждевременные нажатия
+    private static double calculatePrematurePresses(List<OddBallData> dataList) {
+        long totalResponses = dataList.stream()
+                .filter(data -> {
+                    try {
+                        int latency = Integer.parseInt(data.getLatency());
+                        return latency < 250;
+                    } catch (NumberFormatException e) {
+                        return false;
+                    }
+                })
+                .count();
+
+        if (dataList.isEmpty()) {
+            return 0.0;
+        }
+
+        return (double) totalResponses / dataList.size();
+    }
+
+
 
     //среднее время правильной реакции
     private static double calculateAverageReactionTime(List<OddBallData> dataList) {

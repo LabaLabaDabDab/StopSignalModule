@@ -120,7 +120,7 @@ public class StatisticsController {
             System.err.println("Неверный формат возраста.");
             e.printStackTrace();
         }
-
+        
         Label participantInfoLabel = new Label("Информация об испытуемом:");
         participantInfoLabel.setFont(Font.font("Arial", FontWeight.BOLD, 18));
         participantInfoLabel.setPadding(new Insets(5));
