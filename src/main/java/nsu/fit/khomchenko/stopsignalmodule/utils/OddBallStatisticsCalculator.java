@@ -16,35 +16,7 @@ public class OddBallStatisticsCalculator {
 
         Map<String, Map<String, String>> statisticsMap = new HashMap<>();
 
-        String[] parts = tableName.split("_");
-        String gender = "";
-        int age = 0;
-        String testName = "";
-
-        if (parts.length >= 3) {
-            gender = parts[1];
-            try {
-                age = Integer.parseInt(parts[2]);
-            } catch (NumberFormatException e) {
-                e.printStackTrace();
-            }
-
-            StringBuilder testNameBuilder = new StringBuilder();
-            for (int i = 3; i < parts.length; i++) {
-                testNameBuilder.append(parts[i]);
-                if (i < parts.length - 1) {
-                    testNameBuilder.append("_");
-                }
-            }
-            testName = testNameBuilder.toString();
-        } else {
-            System.err.println("Некорректный формат имени таблицы.");
-        }
-
-        Map<String, String> participantInfo = new HashMap<>();
-        participantInfo.put("gender", gender);
-        participantInfo.put("age", String.valueOf(age));
-        participantInfo.put("testName", testName);
+        Map<String, String> participantInfo = StatisticsHelper.extractParticipantInfo(tableName);
         statisticsMap.put("participant_info", participantInfo);
 
         Map<String, String> incorrectPressesComment = new HashMap<>();

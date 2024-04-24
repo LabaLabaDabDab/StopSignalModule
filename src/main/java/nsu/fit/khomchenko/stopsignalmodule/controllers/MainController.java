@@ -32,6 +32,8 @@ import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 import java.util.prefs.Preferences;
 
+import static nsu.fit.khomchenko.stopsignalmodule.utils.InputDialogHelper.*;
+
 
 public class MainController {
     @FXML
@@ -156,46 +158,34 @@ public class MainController {
     }
 
     public void handleDialogInterface(File selectedFile, DatabaseSchema selectedSchema) {
-        TextInputDialog tableNameDialog = new TextInputDialog();
-        tableNameDialog.setTitle("Испытуемый");
-        tableNameDialog.setHeaderText("Введите имя испытуемого:");
+        Optional<String> testPerson = promptTestPersonName();
+        Optional<String> genderResult = promptGender();
+        Optional<Integer> ageResult = promptAge();
 
-        Optional<String> testPerson = tableNameDialog.showAndWait();
-        String baseTableName = testPerson.orElse("").trim();
+        if (testPerson.isPresent() && genderResult.isPresent() && ageResult.isPresent()) {
+            String baseTableName = testPerson.get();
+            String gender = genderResult.get();
+            int age = ageResult.get();
 
-        String[] choices = {"М", "Ж"};
-        ChoiceDialog<String> genderDialog = new ChoiceDialog<>("М", Arrays.asList(choices));
-        genderDialog.setTitle("Пол");
-        genderDialog.setHeaderText("Выберите пол (М/Ж):");
-        genderDialog.setContentText("Пол:");
+            if (!Arrays.asList("М", "Ж").contains(gender) || age < 0 || age > 120) {
+                showAlert();
+                return;
+            }
 
-        Optional<String> genderResult = genderDialog.showAndWait();
-        String gender = genderResult.orElse("");
+            String tableName = baseTableName + "_" + gender + "_" + age;
+            String schemaName = selectedSchema.getSchemaName();
 
-        TextInputDialog ageDialog = new TextInputDialog();
-        ageDialog.setTitle("Возраст");
-        ageDialog.setHeaderText("Введите возраст (0-120):");
-        ageDialog.setContentText("Возраст:");
-
-        Optional<String> ageResult = ageDialog.showAndWait();
-        int age = ageResult.map(Integer::parseInt).orElse(-1);
-
-        if (baseTableName.isEmpty() || !Arrays.asList(choices).contains(gender) || age < 0 || age > 120) {
-            showAlert();
-            return;
-        }
-
-        String tableName = baseTableName + "_" + gender + "_" + age;
-        String schemaName = selectedSchema.getSchemaName();
-
-        String filePath = selectedFile.getAbsolutePath();
-        executor.submit(() -> {
-            DatabaseHandler.loadAndSaveData(filePath, tableName, schemaName);
-            Platform.runLater(() -> {
-                calculateAndCreateStatistics(selectedSchema);
-                updateTableList(selectedSchema);
+            String filePath = selectedFile.getAbsolutePath();
+            executor.submit(() -> {
+                DatabaseHandler.loadAndSaveData(filePath, tableName, schemaName);
+                Platform.runLater(() -> {
+                    calculateAndCreateStatistics(selectedSchema);
+                    updateTableList(selectedSchema);
+                });
             });
-        });
+        } else {
+            showAlert();
+        }
     }
 
 
@@ -206,7 +196,7 @@ public class MainController {
         }
     }
 
-    private void showAlert() {
+    public void showAlert() {
         Platform.runLater(() -> {
             Alert alert = new Alert(Alert.AlertType.ERROR);
             alert.setTitle("Некорректный ввод");
@@ -215,7 +205,7 @@ public class MainController {
         });
     }
 
-    private void showAlert(String message) {
+    public static void showAlert(String message) {
         Platform.runLater(() -> {
             Alert alert = new Alert(Alert.AlertType.INFORMATION);
             alert.setTitle("Информация");
