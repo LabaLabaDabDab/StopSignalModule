@@ -6,49 +6,42 @@ import nsu.fit.khomchenko.stopsignalmodule.data.OddBallData;
 
 import java.util.*;
 
+import static nsu.fit.khomchenko.stopsignalmodule.utils.StatisticsHelper.createMap;
+
 public class OddBallStatisticsCalculator {
     public static Map<String, Map<String, String>> calculateStatistics(List<OddBallData> dataList, String tableName, DatabaseSchema schema, boolean saveToDatabase) {
         double incorrectPressesOffTargetTonePercentage = calculateIncorrectPressesPercentage(dataList);
         double correctPressesTargetTonePercentage = calculateCorrectPressesPercentage(dataList);
         double averageReactionTime = calculateAverageReactionTime(dataList);
         double timeDispersion = calculateIndividualTimeDispersion(dataList);
+        double prematurePresses = calculatePrematurePresses(dataList);
 
         Map<String, Map<String, String>> statisticsMap = new HashMap<>();
 
-        // Добавляем комментарии и значения для каждой статистики
-        Map<String, String> incorrectPressesComment = new HashMap<>();
-        incorrectPressesComment.put("comment", "Процент некорректных нажатий после нецелевого тона");
-        incorrectPressesComment.put("value", incorrectPressesOffTargetTonePercentage + "%");
-        statisticsMap.put("incorrect_presses_off_target_tone_percentage", incorrectPressesComment);
+        Map<String, String> participantInfo = StatisticsHelper.extractParticipantInfo(tableName);
+        statisticsMap.put("participant_info", participantInfo);
 
-        Map<String, String> correctPressesComment = new HashMap<>();
-        correctPressesComment.put("comment", "Процент корректных нажатий после целевого тона");
-        correctPressesComment.put("value", correctPressesTargetTonePercentage + "%");
-        statisticsMap.put("correct_presses_target_tone_percentage", correctPressesComment);
-
-        Map<String, String> averageReactionTimeComment = new HashMap<>();
-        averageReactionTimeComment.put("comment", "Среднее время правильной реакции");
-        averageReactionTimeComment.put("value", String.valueOf(averageReactionTime));
-        statisticsMap.put("average_reaction_time", averageReactionTimeComment);
-
-        Map<String, String> timeDispersionComment = new HashMap<>();
-        timeDispersionComment.put("comment", "Среднее квадратичное отклонение по правильной реакции");
-        timeDispersionComment.put("value", String.valueOf(timeDispersion));
-        statisticsMap.put("individual_time_dispersion", timeDispersionComment);
+        statisticsMap.put("incorrect_presses_off_target_tone_percentage", createMap("Процент некорректных нажатий после нецелевого тона", incorrectPressesOffTargetTonePercentage));
+        statisticsMap.put("correct_presses_target_tone_percentage", createMap("Процент корректных нажатий после целевого тона", correctPressesTargetTonePercentage));
+        statisticsMap.put("average_reaction_time", createMap("Среднее время правильной реакции", averageReactionTime));
+        statisticsMap.put("individual_time_dispersion", createMap("Среднее квадратичное отклонение по правильной реакции", timeDispersion));
+        statisticsMap.put("premature_presses", createMap("Среднее количество преждевременных нажатий", prematurePresses));
 
         if (saveToDatabase) {
             List<Double> values = Arrays.asList(
                     incorrectPressesOffTargetTonePercentage,
                     correctPressesTargetTonePercentage,
                     averageReactionTime,
-                    timeDispersion
+                    timeDispersion,
+                    prematurePresses
             );
 
             List<String> columnNames = Arrays.asList(
                     "incorrect_presses_off_target_tone_percentage",
                     "correct_presses_target_tone_percentage",
                     "average_reaction_time",
-                    "individual_time_dispersion"
+                    "individual_time_dispersion",
+                    "premature_presses"
             );
 
             DatabaseHandler.saveStatisticsToSummaryTable(schema, tableName, columnNames, values);
@@ -56,8 +49,6 @@ public class OddBallStatisticsCalculator {
 
         return statisticsMap;
     }
-
-
 
     //процент некорректных нажатий после нецелевого тона
     private static double calculateIncorrectPressesPercentage(List<OddBallData> dataList) {
@@ -83,6 +74,26 @@ public class OddBallStatisticsCalculator {
                 .count();
 
         return (double) (incorrectResponses * 100) / totalResponses;
+    }
+
+    //Преждевременные нажатия
+    private static double calculatePrematurePresses(List<OddBallData> dataList) {
+        long totalResponses = dataList.stream()
+                .filter(data -> {
+                    try {
+                        int latency = Integer.parseInt(data.getLatency());
+                        return latency < 250;
+                    } catch (NumberFormatException e) {
+                        return false;
+                    }
+                })
+                .count();
+
+        if (dataList.isEmpty()) {
+            return 0.0;
+        }
+
+        return (double) totalResponses / dataList.size();
     }
 
     //среднее время правильной реакции
@@ -113,6 +124,6 @@ public class OddBallStatisticsCalculator {
                         (data.getTrialcode().equals("baseline") && data.getResponse().equals("0")))
                 .mapToDouble(data -> Math.pow(Double.parseDouble(data.getLatency()) - meanReactionTime, 2))
                 .sum();
-        return Math.sqrt(sumOfSquaredDifferences / countCorrectResponse);
+        return Math.sqrt(sumOfSquaredDifferences / countCorrectResponse - 1);
     }
 }

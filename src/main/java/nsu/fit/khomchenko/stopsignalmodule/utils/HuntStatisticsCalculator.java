@@ -8,6 +8,8 @@ import nsu.fit.khomchenko.stopsignalmodule.data.HuntData;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static nsu.fit.khomchenko.stopsignalmodule.utils.StatisticsHelper.createMap;
+
 
 public class HuntStatisticsCalculator {
     public static Map<String, Map<String, String>> calculateStatistics(List<HuntData> tableData, String tableName, DatabaseSchema schemaName, boolean saveToDatabase) {
@@ -19,36 +21,17 @@ public class HuntStatisticsCalculator {
         double individualTimeDispersion = calculateIndividualTimeDispersion(tableData);
 
         Map<String, Map<String, String>> statisticsMap = new HashMap<>();
+        Map<String, String> participantInfo = StatisticsHelper.extractParticipantInfo(tableName);
+        statisticsMap.put("participant_info", participantInfo);
 
-        Map<String, String> successfulStopsData = new HashMap<>();
-        successfulStopsData.put("comment", "Процент успешных торможений");
-        successfulStopsData.put("value", successfulStopsPercentage + "%");
-        statisticsMap.put("successful_stops_percentage", successfulStopsData);
 
-        Map<String, String> missedPressesData = new HashMap<>();
-        missedPressesData.put("comment", "Процент пропущенных нажатий");
-        missedPressesData.put("value", missedPresses + "%");
-        statisticsMap.put("missed_presses_percentage", missedPressesData);
+        statisticsMap.put("successful_stops_percentage", createMap("Процент успешных торможений", successfulStopsPercentage));
+        statisticsMap.put("missed_presses_count", createMap("Количество пропущенных нажатий", missedPresses));
+        statisticsMap.put("incorrect_presses_count", createMap("Количество неправильных нажатий", incorrectPresses));
+        statisticsMap.put("correct_presses_percentage", createMap("Процент правильных нажатий", correctPressesPercentage));
+        statisticsMap.put("average_latency_for_correct_presses", createMap("Среднее время для правильных нажатий", averageLatencyForCorrectPresses));
+        statisticsMap.put("individual_time_dispersion", createMap("Стандартное отклонение по времени для правильных нажатий", individualTimeDispersion));
 
-        Map<String, String> incorrectPressesData = new HashMap<>();
-        incorrectPressesData.put("comment", "Процент неправильных нажатий");
-        incorrectPressesData.put("value", incorrectPresses + "%");
-        statisticsMap.put("incorrect_presses_percentage", incorrectPressesData);
-
-        Map<String, String> correctPressesPercentageData = new HashMap<>();
-        correctPressesPercentageData.put("comment", "Процент правильных нажатий");
-        correctPressesPercentageData.put("value", correctPressesPercentage + "%");
-        statisticsMap.put("correct_presses_percentage", correctPressesPercentageData);
-
-        Map<String, String> averageLatencyForCorrectPressesData = new HashMap<>();
-        averageLatencyForCorrectPressesData.put("comment", "Среднее время для правильных нажатий");
-        averageLatencyForCorrectPressesData.put("value", String.valueOf(averageLatencyForCorrectPresses));
-        statisticsMap.put("average_latency_for_correct_presses", averageLatencyForCorrectPressesData);
-
-        Map<String, String> individualTimeDispersionData = new HashMap<>();
-        individualTimeDispersionData.put("comment", "Индивидуальная дисперсия по времени");
-        individualTimeDispersionData.put("value", String.valueOf(individualTimeDispersion));
-        statisticsMap.put("individual_time_dispersion", individualTimeDispersionData);
 
         if (saveToDatabase) {
             List<Double> values = Arrays.asList(
@@ -62,8 +45,8 @@ public class HuntStatisticsCalculator {
 
             List<String> columnNames = Arrays.asList(
                     "successful_stops_percentage",
-                    "missed_presses_percentage",
-                    "incorrect_presses_percentage",
+                    "missed_presses_count",
+                    "incorrect_presses_count",
                     "correct_presses_percentage",
                     "average_latency_for_correct_presses",
                     "individual_time_dispersion"
@@ -91,20 +74,18 @@ public class HuntStatisticsCalculator {
         return (double) successfulStopsCount / filteredData.size() * 100;
     }
 
-    //Процент пропущенных нажатия
+    //Количество пропущенных нажатий
     private static double countMissedPresses(List<HuntData> dataList) {
-        long correctPressesCount = dataList.stream()
+        return dataList.stream()
                 .filter(data -> Integer.parseInt(data.getLatency()) == 750)
                 .count();
-        return (double) correctPressesCount / dataList.size() * 100;
     }
 
-    //Процент неправильных нажатия
+    //Количество неправильных нажатий
     private static double countIncorrectPresses(List<HuntData> dataList) {
-        long correctPressesCount = dataList.stream()
+        return dataList.stream()
                 .filter(data -> Integer.parseInt(data.getLatency()) < 750 && Integer.parseInt(data.getCorrect()) == 0)
                 .count();
-        return (double) correctPressesCount / dataList.size() * 100;
     }
 
 
@@ -130,7 +111,7 @@ public class HuntStatisticsCalculator {
         return totalLatency / correctPresses.size();
     }
 
-    //Индивидуальная дисперсия по времени(только для правильных) (среднее квадратичное отклонение по времени)
+    //среднее квадратичное отклонение по времени(только для правильных)
     private static double calculateIndividualTimeDispersion(List<HuntData> dataList) {
         List<HuntData> correctPresses = dataList.stream()
                 .filter(data -> Integer.parseInt(data.getLatency()) < 750 && Integer.parseInt(data.getCorrect()) == 1)
@@ -142,6 +123,6 @@ public class HuntStatisticsCalculator {
                 .mapToDouble(data -> Math.pow(Double.parseDouble(data.getLatency()) - averageLatency, 2))
                 .sum();
 
-        return Math.sqrt(sumOfSquaredDifferences / correctPresses.size());
+        return Math.sqrt(sumOfSquaredDifferences / correctPresses.size() - 1);
     }
 }

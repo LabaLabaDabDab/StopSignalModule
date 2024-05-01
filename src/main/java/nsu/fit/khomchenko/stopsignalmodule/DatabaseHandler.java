@@ -1,19 +1,30 @@
 package nsu.fit.khomchenko.stopsignalmodule;
 
+import javafx.scene.control.Alert;
 import nsu.fit.khomchenko.stopsignalmodule.data.HuntData;
 import nsu.fit.khomchenko.stopsignalmodule.data.OddBallData;
+import nsu.fit.khomchenko.stopsignalmodule.data.StroopData;
 
 import java.io.*;
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class DatabaseHandler {
-    private static final String JDBC_URL = "jdbc:postgresql://localhost:5432/postgres";
-    private static final String USERNAME = "postgres";
-    private static final String PASSWORD = "1";
+    public static String jdbcUrl = "jdbc:postgresql://localhost:5432/postgres";
+    private static String username = "postgres";
+    private static String password = "1";
+
+    public static void setJdbcUrl(String newJdbcUrl) {
+        jdbcUrl = newJdbcUrl;
+    }
+
+    public static void setUsername(String newUsername) {
+        username = newUsername;
+    }
+
+    public static void setPassword(String newPassword) {
+        password = newPassword;
+    }
 
     static {
         try {
@@ -25,23 +36,32 @@ public class DatabaseHandler {
 
     public static Connection connect() {
         try {
-            return DriverManager.getConnection(JDBC_URL, USERNAME, PASSWORD);
+            return DriverManager.getConnection(jdbcUrl, username, password);
         } catch (SQLException e) {
             e.printStackTrace();
             System.err.println("Failed to connect to the database: " + e.getMessage());
+            showErrorAlert(e.getMessage(), e.getMessage());
             return null;
         }
     }
 
+    private static void showErrorAlert(String title, String message) {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle("Error");
+        alert.setHeaderText(title);
+        alert.setContentText(message);
+        alert.showAndWait();
+    }
+
     public static Connection connect(String schemaName) {
         createSchema(schemaName);
-
         try {
-            String jdbcUrl = JDBC_URL + "?currentSchema=" + schemaName;
-            return DriverManager.getConnection(jdbcUrl, USERNAME, PASSWORD);
+            String jdbcUrlNew = jdbcUrl + "?currentSchema=" + schemaName;
+            return DriverManager.getConnection(jdbcUrlNew, username, password);
         } catch (SQLException e) {
             e.printStackTrace();
             System.err.println("Failed to connect to the database: " + e.getMessage());
+            showErrorAlert("Failed to connect to the database", e.getMessage());
             return null;
         }
     }
@@ -97,12 +117,13 @@ public class DatabaseHandler {
         }
     }
 
-
     private static void saveDataRow(String tableName, String dataRow, String schemaName) {
         try (Connection connection = connect(schemaName)) {
             if (connection != null) {
                 try {
                     String[] values = dataRow.split("\t");
+
+                    boolean add100ToLatency = isAdd100ToLatency(schemaName);
 
                     StringBuilder sql = new StringBuilder("INSERT INTO " + schemaName + "." + tableName + " VALUES (");
                     for (int i = 0; i < values.length; i++) {
@@ -112,8 +133,14 @@ public class DatabaseHandler {
                     sql.append(")");
 
                     try (PreparedStatement preparedStatement = connection.prepareStatement(sql.toString())) {
+                        int parameterIndex = 1;
                         for (int i = 0; i < values.length; i++) {
-                            preparedStatement.setString(i + 1, values[i]);
+                            if (i == 6 && add100ToLatency) {
+                                int latencyValue = Integer.parseInt(values[i]) + 100;
+                                preparedStatement.setString(parameterIndex++, String.valueOf(latencyValue));
+                            } else {
+                                preparedStatement.setString(parameterIndex++, values[i]);
+                            }
                         }
                         preparedStatement.executeUpdate();
                     }
@@ -125,6 +152,11 @@ public class DatabaseHandler {
             e.printStackTrace();
         }
     }
+
+    private static boolean isAdd100ToLatency(String schemaName) {
+        return Objects.equals(schemaName, DatabaseSchema.ODD_BALL_EASY.getSchemaName()) || Objects.equals(schemaName, DatabaseSchema.ODD_BALL_HARD.getSchemaName());
+    }
+
 
     public static List<String> getAllTables(DatabaseSchema schema) {
         List<String> tableNames = new ArrayList<>();
@@ -420,7 +452,7 @@ public class DatabaseHandler {
         try (Connection connection = connect(schema.getSchemaName())) {
             if (connection != null) {
                 try (Statement statement = connection.createStatement()) {
-                    ResultSet resultSet = statement.executeQuery("SELECT * FROM " + schema.getSchemaName() + "." + tableName +  " WHERE trialcode != 'CRTTpractice'");
+                    ResultSet resultSet = statement.executeQuery("SELECT * FROM " + schema.getSchemaName() + "." + tableName + " WHERE trialcode != 'CRTTpractice'");
                     while (resultSet.next()) {
                         OddBallData data = new OddBallData();
                         data.setDate(resultSet.getString("date"));
@@ -508,5 +540,165 @@ public class DatabaseHandler {
         return averageValuesMap;
     }
 
+    public static int countByGroup(DatabaseSchema schema, boolean isMaleSelected, boolean isFemaleSelected, int ageLowerBound, int ageUpperBound) {
+        int count = 0;
+
+        try (Connection connection = connect(schema.getSchemaName())) {
+            if (connection != null) {
+                String query = "SELECT COUNT(*) FROM summary_table WHERE CAST(REPLACE(SPLIT_PART(source_table_name, '_', 3), '%', '') AS DECIMAL(10,0)) BETWEEN ? AND ?";
+
+                if (isMaleSelected && isFemaleSelected) {
+                    query += " AND (source_table_name LIKE '%_М_%' OR source_table_name LIKE '%_Ж_%')";
+                } else if (!isMaleSelected && !isFemaleSelected) {
+                    query += " AND NOT (source_table_name LIKE '%_М_%' OR source_table_name LIKE '%_Ж_%')";
+                } else if (isMaleSelected) {
+                    query += " AND source_table_name LIKE '%_М_%'";
+                } else if (isFemaleSelected) {
+                    query += " AND source_table_name LIKE '%_Ж_%'";
+                }
+
+                try (PreparedStatement statement = connection.prepareStatement(query)) {
+                    statement.setInt(1, ageLowerBound);
+                    statement.setInt(2, ageUpperBound);
+                    ResultSet resultSet = statement.executeQuery();
+
+                    if (resultSet.next()) {
+                        count = resultSet.getInt(1);
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return count;
+    }
+
+    public static Map<String, Double> getStandardDeviationStatistics(DatabaseSchema schema, boolean isMaleSelected, boolean isFemaleSelected, int ageLowerBound, int ageUpperBound, Map<String, Double> averageStatisticsResultFinal, int countByGroupFutureFinal) {
+        Map<String, Double> stdDeviationValuesMap = new HashMap<>();
+
+        try (Connection connection = connect(schema.getSchemaName())) {
+            if (connection != null) {
+                String query = "SELECT ";
+
+                List<String> columnNames = getColumnNames(schema, "summary_table");
+                for (String columnName : columnNames) {
+                    if (!columnName.equals("source_table_name")) {
+                        query += "SQRT(SUM(POWER(CAST(REPLACE(REPLACE(" + columnName + ", '%', ''), ',', '.') AS DECIMAL(10,2)) - ?, 2)) / ?) as " + columnName + ", ";
+                    }
+                }
+                query = query.substring(0, query.length() - 2);
+                query += " FROM summary_table";
+
+                query += " WHERE CAST(REPLACE(SPLIT_PART(source_table_name, '_', 3), '%', '') AS DECIMAL(10,0)) BETWEEN ? AND ?";
+
+                if (isMaleSelected && isFemaleSelected) {
+                    query += " AND (source_table_name LIKE '%_М_%' OR source_table_name LIKE '%_Ж_%')";
+                } else if (!isMaleSelected && !isFemaleSelected) {
+                    query += " AND NOT (source_table_name LIKE '%_М_%' OR source_table_name LIKE '%_Ж_%')";
+                } else if (isMaleSelected) {
+                    query += " AND source_table_name LIKE '%_М_%'";
+                } else if (isFemaleSelected) {
+                    query += " AND source_table_name LIKE '%_Ж_%'";
+                }
+
+                try (PreparedStatement statement = connection.prepareStatement(query)) {
+                    int parameterIndex = 1;
+
+                    for (String columnName : columnNames) {
+                        if (!columnName.equals("source_table_name")) {
+                            Double average = averageStatisticsResultFinal.get(columnName);
+                            if (average != null) {
+                                statement.setDouble(parameterIndex, average);
+                                statement.setInt(parameterIndex + 1, countByGroupFutureFinal);
+
+                                parameterIndex += 2;
+                            }
+                        }
+                    }
+
+                    statement.setInt(parameterIndex, ageLowerBound);
+                    statement.setInt(parameterIndex + 1, ageUpperBound);
+
+                    ResultSet resultSet = statement.executeQuery();
+                    ResultSetMetaData metaData = resultSet.getMetaData();
+                    int columnCount = metaData.getColumnCount();
+
+                    if (resultSet.next()) {
+                        for (int i = 1; i <= columnCount; i++) {
+                            String columnName = metaData.getColumnName(i);
+                            double columnStdDev = resultSet.getDouble(i);
+                            stdDeviationValuesMap.put(columnName, columnStdDev);
+                        }
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return stdDeviationValuesMap;
+    }
+
+    public static List<StroopData> getStroopDataForSchema(DatabaseSchema schema, String tableName) {
+        List<StroopData> dataList = new ArrayList<>();
+        try (Connection connection = connect(schema.getSchemaName())) {
+            if (connection != null) {
+                try (Statement statement = connection.createStatement()) {
+                    ResultSet resultSet = statement.executeQuery("SELECT * FROM " + schema.getSchemaName() + "." + tableName + " WHERE trialcode != 'CRTTpractice'");
+                    while (resultSet.next()) {
+                        StroopData data = new StroopData();
+                        data.setDate(resultSet.getString("date"));
+                        data.setTime(resultSet.getString("time"));
+                        data.setSubject(resultSet.getString("subject"));
+                        data.setBlockcode(resultSet.getString("blockcode"));
+                        data.setTrialcode(resultSet.getString("trialcode"));
+                        data.setStimulusitem1(resultSet.getString("stimulusitem1"));
+                        data.setStimulusitem2(resultSet.getString("stimulusitem2"));
+                        data.setStimulusitem3(resultSet.getString("stimulusitem3"));
+                        data.setStimulusitem4(resultSet.getString("stimulusitem4"));
+                        data.setTrialnum(resultSet.getString("trialnum"));
+                        data.setLatency(resultSet.getString("latency"));
+                        data.setResponse(resultSet.getString("response"));
+                        data.setCorrect(resultSet.getString("correct"));
+                        dataList.add(data);
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return dataList;
+    }
+
+    public static boolean renameTable(DatabaseSchema schema, String oldTableName, String newTableName) {
+        try (Connection connection = connect(schema.getSchemaName())) {
+            if (connection != null) {
+                try (Statement statement = connection.createStatement()) {
+                    statement.executeUpdate("ALTER TABLE " + schema.getSchemaName() + "." + oldTableName + " RENAME TO " + newTableName);
+                    updateSummaryTableOnTableRename(schema, oldTableName, newTableName);
+                    return true;
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    private static void updateSummaryTableOnTableRename(DatabaseSchema schema, String oldTableName, String newTableName) {
+        try (Connection connection = connect(schema.getSchemaName())) {
+            if (connection != null) {
+                try (PreparedStatement statement = connection.prepareStatement(
+                        "UPDATE " + schema.getSchemaName() + ".summary_table SET source_table_name = ? WHERE source_table_name = ?")) {
+                    statement.setString(1, newTableName);
+                    statement.setString(2, oldTableName);
+                    statement.executeUpdate();
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
 
 }

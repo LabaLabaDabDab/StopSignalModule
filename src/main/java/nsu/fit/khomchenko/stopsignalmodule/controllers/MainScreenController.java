@@ -9,8 +9,11 @@ import nsu.fit.khomchenko.stopsignalmodule.DatabaseHandler;
 import nsu.fit.khomchenko.stopsignalmodule.DatabaseSchema;
 import nsu.fit.khomchenko.stopsignalmodule.data.HuntData;
 import nsu.fit.khomchenko.stopsignalmodule.data.OddBallData;
+import nsu.fit.khomchenko.stopsignalmodule.data.StroopData;
 import nsu.fit.khomchenko.stopsignalmodule.utils.HuntStatisticsCalculator;
+import nsu.fit.khomchenko.stopsignalmodule.utils.InputDialogHelper;
 import nsu.fit.khomchenko.stopsignalmodule.utils.OddBallStatisticsCalculator;
+import nsu.fit.khomchenko.stopsignalmodule.utils.StroopStatisticsCalculator;
 
 import java.io.File;
 import java.util.Arrays;
@@ -19,7 +22,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.*;
 
-import static nsu.fit.khomchenko.stopsignalmodule.DatabaseHandler.getAverageStatistics;
+import static nsu.fit.khomchenko.stopsignalmodule.DatabaseHandler.*;
 
 public class MainScreenController {
     @FXML
@@ -68,38 +71,23 @@ public class MainScreenController {
 
     private CompletableFuture<Optional<String>> handleDialogTestInterfaceAsync(File selectedFile, DatabaseSchema selectedSchema) {
         return CompletableFuture.supplyAsync(() -> {
-            TextInputDialog tableNameDialog = new TextInputDialog();
-            tableNameDialog.setTitle("Испытуемый");
-            tableNameDialog.setHeaderText("Введите имя испытуемого:");
-
-            Optional<String> testPerson = tableNameDialog.showAndWait();
-            String baseTableName = testPerson.orElse("").trim();
-
-            String[] choices = {"М", "Ж"};
-            ChoiceDialog<String> genderDialog = new ChoiceDialog<>("М", Arrays.asList(choices));
-            genderDialog.setTitle("Пол");
-            genderDialog.setHeaderText("Выберите пол (М/Ж):");
-            genderDialog.setContentText("Пол:");
-
-            Optional<String> genderResult = genderDialog.showAndWait();
-            String gender = genderResult.orElse("");
-
-            TextInputDialog ageDialog = new TextInputDialog();
-            ageDialog.setTitle("Возраст");
-            ageDialog.setHeaderText("Введите возраст (0-120):");
-            ageDialog.setContentText("Возраст:");
-
-            Optional<String> ageResult = ageDialog.showAndWait();
-            int age = ageResult.map(Integer::parseInt).orElse(-1);
-
-            if (baseTableName.isEmpty() || !Arrays.asList(choices).contains(gender) || age < 0 || age > 120) {
-                return Optional.<String>empty();
+            Optional<String> testName = InputDialogHelper.promptTestPersonName();
+            if (testName.isEmpty()) {
+                return Optional.empty();
             }
 
-            String tableName = baseTableName + "_" + gender + "_" + age + "_test";
+            Optional<String> gender = InputDialogHelper.promptGender();
+            if (gender.isEmpty()) {
+                return Optional.empty();
+            }
 
+            Optional<Integer> age = InputDialogHelper.promptAge();
+            if (age.isEmpty()) {
+                return Optional.empty();
+            }
+
+            String tableName = testName.get() + "_" + gender.get() + "_" + age.get() + "_test";
             String schemaName = selectedSchema.getSchemaName();
-
             String filePath = selectedFile.getAbsolutePath();
 
             DatabaseHandler.loadAndSaveData(filePath, tableName, schemaName);
@@ -107,7 +95,6 @@ public class MainScreenController {
             return Optional.of(tableName);
         }, Platform::runLater);
     }
-
 
     @FXML
     private void handleStartButtonAction(ActionEvent actionEvent) {
@@ -132,11 +119,13 @@ public class MainScreenController {
                         String tableName = tableNameOptional.get();
                         CompletableFuture<Map<String, Double>> averageStatisticsFuture = null;
                         CompletableFuture<Map<String, Map<String, String>>> statisticsResultFuture = null;
+                        CompletableFuture<Integer> countByGroupFuture = null;
 
                         switch (selectedSchema) {
                             case HUNT -> {
                                 List<HuntData> huntDataList = DatabaseHandler.getHuntDataForTable(selectedSchema, tableName);
                                 if (!huntDataList.isEmpty()) {
+                                    countByGroupFuture = CompletableFuture.supplyAsync(() -> countByGroup(selectedSchema, true, true, 0, 120));
                                     averageStatisticsFuture = CompletableFuture.supplyAsync(() -> getAverageStatistics(selectedSchema, true, true, 0, 120));
                                     statisticsResultFuture = CompletableFuture.supplyAsync(() -> HuntStatisticsCalculator.calculateStatistics(huntDataList, tableName, selectedSchema, false));
                                 } else {
@@ -146,8 +135,19 @@ public class MainScreenController {
                             case ODD_BALL_EASY, ODD_BALL_HARD -> {
                                 List<OddBallData> oddBallDataList = DatabaseHandler.getOddBallDataForSchema(selectedSchema, tableName);
                                 if (!oddBallDataList.isEmpty()) {
+                                    countByGroupFuture = CompletableFuture.supplyAsync(() -> countByGroup(selectedSchema, true, true, 0, 120));
                                     averageStatisticsFuture = CompletableFuture.supplyAsync(() -> getAverageStatistics(selectedSchema, true, true, 0, 120));
                                     statisticsResultFuture = CompletableFuture.supplyAsync(() -> OddBallStatisticsCalculator.calculateStatistics(oddBallDataList, tableName, selectedSchema, false));
+                                } else {
+                                    System.out.println("Нет данных для таблицы " + tableName + " в схеме " + selectedSchema.getSchemaName());
+                                }
+                            }
+                            case STROOP -> {
+                                List<StroopData> stroopDataList = DatabaseHandler.getStroopDataForSchema(selectedSchema, tableName);
+                                if (!stroopDataList.isEmpty()) {
+                                    countByGroupFuture = CompletableFuture.supplyAsync(() -> countByGroup(selectedSchema, true, true, 0, 120));
+                                    averageStatisticsFuture = CompletableFuture.supplyAsync(() -> getAverageStatistics(selectedSchema, true, true, 0, 120));
+                                    statisticsResultFuture = CompletableFuture.supplyAsync(() -> StroopStatisticsCalculator.calculateStatistics(stroopDataList, tableName, selectedSchema, false));
                                 } else {
                                     System.out.println("Нет данных для таблицы " + tableName + " в схеме " + selectedSchema.getSchemaName());
                                 }
@@ -156,23 +156,30 @@ public class MainScreenController {
                         }
 
                         if (averageStatisticsFuture != null && statisticsResultFuture != null) {
-                            CompletableFuture<Void> combinedFuture = CompletableFuture.allOf(averageStatisticsFuture, statisticsResultFuture);
+                            CompletableFuture<Void> combinedFuture = CompletableFuture.allOf(averageStatisticsFuture, statisticsResultFuture, countByGroupFuture);
 
                             final CompletableFuture<Map<String, Double>> finalAverageStatisticsFuture = averageStatisticsFuture;
                             final CompletableFuture<Map<String, Map<String, String>>> finalStatisticsResultFuture = statisticsResultFuture;
+                            final CompletableFuture<Integer> finalCountByGroupFuture = countByGroupFuture;
 
                             combinedFuture.thenRunAsync(() -> {
                                 try {
                                     Map<String, Double> averageStatisticsResultFinal = finalAverageStatisticsFuture.get();
                                     Map<String, Map<String, String>> statisticsResultFinal = finalStatisticsResultFuture.get();
+                                    Integer countByGroupFutureFinal = finalCountByGroupFuture.get();
+
+                                    Map<String, Double> standardDeviation = getStandardDeviationStatistics(selectedSchema, true, true, 0, 120, averageStatisticsResultFinal, countByGroupFutureFinal);
+
                                     mainController.switchToStatistic();
-                                    mainController.getStatisticsController().displayStatistics(statisticsResultFinal, averageStatisticsResultFinal);
+                                    mainController.getStatisticsController().setSelectedTableName(tableName);
+                                    mainController.getStatisticsController().setStatisticsResult(statisticsResultFinal);
+                                    mainController.getStatisticsController().setSelectedSchema(selectedSchema);
+                                    mainController.getStatisticsController().displayStatistics(averageStatisticsResultFinal, standardDeviation);
 
                                 } catch (InterruptedException | ExecutionException e) {
                                     e.printStackTrace();
                                 }
                             }, Platform::runLater);
-
                         }
                     } else {
                         showAlert("Не удалось получить название таблицы.");

@@ -13,54 +13,56 @@
     <children>
         <HBox alignment="TOP_CENTER">
             <children>
-            <VBox>
-               <children>
-                   <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Фильтры" textAlignment="CENTER" wrappingWidth="451.73667907714844">
-                     <font>
-                        <Font size="30.0" />
-                     </font></Text>
-                   <HBox alignment="TOP_CENTER" prefHeight="26.0" prefWidth="514.0">
-                       <CheckBox fx:id="maleCheckBox" text="Мужчина">
-                        <font>
-                           <Font size="15.0" />
-                        </font></CheckBox>
-                       <CheckBox fx:id="femaleCheckBox" text="Женщина">
-                        <font>
-                           <Font size="15.0" />
-                        </font></CheckBox>
-                   </HBox>
-                   <HBox prefHeight="62.0" prefWidth="500.0">
-                     <children>
-                          <Label alignment="CENTER" prefHeight="54.0" prefWidth="192.0" text="Возраст испытуемого (0-120 лет)" wrapText="true">
-                           <font>
-                              <Font size="15.0" />
-                           </font></Label>
-                        <VBox prefHeight="62.0" prefWidth="171.0">
-                           <children>
-                                <TextField fx:id="ageLowerTextField" alignment="TOP_CENTER" prefHeight="31.0" prefWidth="254.0" promptText="Введите нижнее значение">
-                                 <font>
+                <VBox prefHeight="400.0" prefWidth="343.0">
+                    <children>
+                        <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Фильтры" textAlignment="CENTER" wrappingWidth="380.53660583496094">
+                            <font>
+                                <Font size="30.0" />
+                            </font></Text>
+                        <HBox alignment="TOP_CENTER" prefHeight="36.0" prefWidth="402.0">
+                            <CheckBox fx:id="maleCheckBox" text="Мужчина">
+                                <font>
                                     <Font size="15.0" />
-                                 </font></TextField>
-                                <TextField fx:id="ageUpperTextField" alignment="TOP_CENTER" prefHeight="31.0" prefWidth="254.0" promptText="Введите верхнее значение">
-                                 <font>
+                                </font></CheckBox>
+                            <CheckBox fx:id="femaleCheckBox" text="Женщина">
+                                <font>
                                     <Font size="15.0" />
-                                 </font></TextField>
-                           </children>
+                                </font></CheckBox>
+                        </HBox>
+                        <HBox prefHeight="62.0" prefWidth="500.0">
+                            <children>
+                                <Label alignment="CENTER" prefHeight="54.0" prefWidth="192.0" text="Возраст испытуемого (0-120 лет)" wrapText="true">
+                                    <font>
+                                        <Font size="15.0" />
+                                    </font></Label>
+                                <VBox prefHeight="62.0" prefWidth="171.0">
+                                    <children>
+                                        <TextField fx:id="ageLowerTextField" alignment="TOP_CENTER" prefHeight="31.0" prefWidth="390.0" promptText="Нижняя граница">
+                                            <font>
+                                                <Font size="15.0" />
+                                            </font></TextField>
+                                        <TextField fx:id="ageUpperTextField" alignment="TOP_CENTER" prefHeight="31.0" prefWidth="390.0" promptText="Верхняя граница">
+                                            <font>
+                                                <Font size="15.0" />
+                                            </font></TextField>
+                                    </children>
+                                </VBox>
+                            </children>
+                        </HBox>
+                        <VBox spacing="10">
+                            <Button fx:id="applyButton" onAction="#applyFilters" alignment="CENTER" contentDisplay="TOP" minWidth="-Infinity" mnemonicParsing="false" prefHeight="31.0" prefWidth="362.0" text="ПРИМЕНИТЬ" textAlignment="CENTER">
+                                <font>
+                                    <Font size="15.0" />
+                                </font>
+                            </Button>
+                            <Button fx:id="saveButton" onAction="#saveStatistics" alignment="CENTER" contentDisplay="TOP" minWidth="-Infinity" mnemonicParsing="false" prefHeight="31.0" prefWidth="362.0" text="СОХРАНИТЬ" textAlignment="CENTER">
+                                <font>
+                                    <Font size="15.0" />
+                                </font>
+                            </Button>
                         </VBox>
-                     </children>
-                   </HBox>
-                  <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Δ для средних значений" textAlignment="CENTER" wrappingWidth="450.9366912841797">
-                     <font>
-                        <Font size="30.0" />
-                     </font>
-                  </Text>
-                  <VBox fx:id="VboxDelta" />
-                  <Button alignment="CENTER" contentDisplay="TOP" minWidth="-Infinity" mnemonicParsing="false" prefHeight="31.0" prefWidth="452.0" text="ПРИМЕНИТЬ" textAlignment="CENTER">
-                     <font>
-                        <Font size="15.0" />
-                     </font></Button>
-               </children>
-            </VBox>
+                    </children>
+                </VBox>
                 <VBox fx:id="VboxForData" prefHeight="400.0" prefWidth="402.0" HBox.hgrow="ALWAYS">
 
                 </VBox>

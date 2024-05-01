@@ -45,7 +45,7 @@
                       </ImageView>
                   </children>
                </Pane>
-                  <Label fx:id="tableNameLabel" prefHeight="36.0" prefWidth="766.0" style="-fx-font-size: 25px; -fx-font-weight: bold;" text="Данные испытумоего:" />
+                  <Label fx:id="tableNameLabel" prefHeight="36.0" prefWidth="766.0" style="-fx-font-size: 25px; -fx-font-weight: bold;" text="Данные испытуемого:" />
             </children>
          </HBox>
             <TableView fx:id="tableView" prefHeight="518.0" prefWidth="1156.0" VBox.vgrow="ALWAYS">

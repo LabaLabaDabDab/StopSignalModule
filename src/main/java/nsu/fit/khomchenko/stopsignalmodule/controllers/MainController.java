@@ -2,28 +2,38 @@ package nsu.fit.khomchenko.stopsignalmodule.controllers;
 
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
-import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.geometry.Insets;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.GridPane;
 import javafx.stage.FileChooser;
 import nsu.fit.khomchenko.stopsignalmodule.DatabaseHandler;
 import nsu.fit.khomchenko.stopsignalmodule.DatabaseSchema;
 import nsu.fit.khomchenko.stopsignalmodule.data.HuntData;
 import nsu.fit.khomchenko.stopsignalmodule.data.OddBallData;
+import nsu.fit.khomchenko.stopsignalmodule.data.StroopData;
 import nsu.fit.khomchenko.stopsignalmodule.utils.HuntStatisticsCalculator;
 import nsu.fit.khomchenko.stopsignalmodule.utils.OddBallStatisticsCalculator;
+import nsu.fit.khomchenko.stopsignalmodule.utils.StroopStatisticsCalculator;
 
 import java.io.File;
 import java.io.IOException;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.prefs.Preferences;
 import java.util.stream.Collectors;
+
+import static nsu.fit.khomchenko.stopsignalmodule.utils.InputDialogHelper.*;
+
 
 public class MainController {
     @FXML
@@ -148,48 +158,34 @@ public class MainController {
     }
 
     public void handleDialogInterface(File selectedFile, DatabaseSchema selectedSchema) {
-        TextInputDialog tableNameDialog = new TextInputDialog();
-        tableNameDialog.setTitle("Название таблицы");
-        tableNameDialog.setHeaderText("Введите базовое название таблицы:");
-        tableNameDialog.setContentText("Базовое название таблицы:");
+        Optional<String> testPerson = promptTestPersonName();
+        Optional<String> genderResult = promptGender();
+        Optional<Integer> ageResult = promptAge();
 
-        Optional<String> baseTableNameResult = tableNameDialog.showAndWait();
-        String baseTableName = baseTableNameResult.orElse("").trim();
+        if (testPerson.isPresent() && genderResult.isPresent() && ageResult.isPresent()) {
+            String baseTableName = testPerson.get();
+            String gender = genderResult.get();
+            int age = ageResult.get();
 
+            if (!Arrays.asList("М", "Ж").contains(gender) || age < 0 || age > 120) {
+                showAlert();
+                return;
+            }
 
-        String[] choices = {"М", "Ж"};
-        ChoiceDialog<String> genderDialog = new ChoiceDialog<>("М", Arrays.asList(choices));
-        genderDialog.setTitle("Пол");
-        genderDialog.setHeaderText("Выберите пол (М/Ж):");
-        genderDialog.setContentText("Пол:");
+            String tableName = baseTableName + "_" + gender + "_" + age;
+            String schemaName = selectedSchema.getSchemaName();
 
-        Optional<String> genderResult = genderDialog.showAndWait();
-        String gender = genderResult.orElse("");
-
-        TextInputDialog ageDialog = new TextInputDialog();
-        ageDialog.setTitle("Возраст");
-        ageDialog.setHeaderText("Введите возраст (0-120):");
-        ageDialog.setContentText("Возраст:");
-
-        Optional<String> ageResult = ageDialog.showAndWait();
-        int age = ageResult.map(Integer::parseInt).orElse(-1);
-
-        if (baseTableName.isEmpty() || !Arrays.asList(choices).contains(gender) || age < 0 || age > 120) {
-            showAlert();
-            return;
-        }
-
-        String tableName = baseTableName + "_" + gender + "_" + age;
-        String schemaName = selectedSchema.getSchemaName();
-
-        String filePath = selectedFile.getAbsolutePath();
-        executor.submit(() -> {
-            DatabaseHandler.loadAndSaveData(filePath, tableName, schemaName);
-            Platform.runLater(() -> {
-                calculateAndCreateStatistics(selectedSchema);
-                updateTableList(selectedSchema);
+            String filePath = selectedFile.getAbsolutePath();
+            executor.submit(() -> {
+                DatabaseHandler.loadAndSaveData(filePath, tableName, schemaName);
+                Platform.runLater(() -> {
+                    calculateAndCreateStatistics(selectedSchema);
+                    updateTableList(selectedSchema);
+                });
             });
-        });
+        } else {
+            showAlert();
+        }
     }
 
 
@@ -200,7 +196,7 @@ public class MainController {
         }
     }
 
-    private void showAlert() {
+    public void showAlert() {
         Platform.runLater(() -> {
             Alert alert = new Alert(Alert.AlertType.ERROR);
             alert.setTitle("Некорректный ввод");
@@ -209,7 +205,7 @@ public class MainController {
         });
     }
 
-    private void showAlert(String message) {
+    public static void showAlert(String message) {
         Platform.runLater(() -> {
             Alert alert = new Alert(Alert.AlertType.INFORMATION);
             alert.setTitle("Информация");
@@ -328,6 +324,7 @@ public class MainController {
 
     public void switchToStatistic(){
         Parent mainScreenContent = loadFXML("statistics");
+        closeMenuItem.setVisible(true);
         getBorderPane().setCenter(mainScreenContent);
     }
 
@@ -359,7 +356,45 @@ public class MainController {
         }
     }
 
-    private void calculateAndCreateStatistics(DatabaseSchema schema) {
+    public List<Double> calculateStatisticsForTable(DatabaseSchema schema, String tableName) {
+        List<Double> statistics = new ArrayList<>();
+
+        switch (schema) {
+            case HUNT -> {
+                List<HuntData> huntDataList = DatabaseHandler.getHuntDataForTable(schema, tableName);
+                if (!huntDataList.isEmpty()) {
+                    Map<String, Map<String, String>> statisticsResult = HuntStatisticsCalculator.calculateStatistics(huntDataList, tableName, schema, true);
+                    // Здесь можно добавить логику для расчета статистики и добавления значений в список statistics
+                } else {
+                    System.out.println("Нет данных для таблицы " + tableName + " в схеме HUNT");
+                }
+            }
+            case ODD_BALL_EASY, ODD_BALL_HARD -> {
+                List<OddBallData> oddBallDataList = DatabaseHandler.getOddBallDataForSchema(schema, tableName);
+                if (!oddBallDataList.isEmpty()) {
+                    Map<String, Map<String, String>> statisticsResult = OddBallStatisticsCalculator.calculateStatistics(oddBallDataList, tableName, schema, true);
+                    // Здесь можно добавить логику для расчета статистики и добавления значений в список statistics
+                } else {
+                    System.out.println("Нет данных для таблицы " + tableName + " в схеме " + schema.getSchemaName());
+                }
+            }
+            case STROOP -> {
+                List<StroopData> stroopDataList = DatabaseHandler.getStroopDataForSchema(schema, tableName);
+                if (!stroopDataList.isEmpty()) {
+                    Map<String, Map<String, String>> statisticsResult = StroopStatisticsCalculator.calculateStatistics(stroopDataList, tableName, schema, true);
+                    // Здесь можно добавить логику для расчета статистики и добавления значений в список statistics
+                } else {
+                    System.out.println("Нет данных для таблицы " + tableName + " в схеме " + schema.getSchemaName());
+                }
+            }
+            default -> System.out.println("Неизвестная схема: " + schema.getSchemaName());
+        }
+
+        return statistics;
+    }
+
+
+    public void calculateAndCreateStatistics(DatabaseSchema schema) {
         List<String> tableNames = DatabaseHandler.getAllTables(schema);
         if (tableNames.isEmpty()) {
             System.out.println("Нет данных для схемы " + schema);
@@ -386,25 +421,17 @@ public class MainController {
                         System.out.println("Нет данных для таблицы " + tableName + " в схеме " + schema.getSchemaName());
                     }
                 }
+                case STROOP -> {
+                    List<StroopData> stroopDataList = DatabaseHandler.getStroopDataForSchema(schema, tableName);
+                    if (!stroopDataList.isEmpty()) {
+                        Map<String, Map<String, String>> statisticsResult = StroopStatisticsCalculator.calculateStatistics(stroopDataList, tableName, schema, true);
+                    } else {
+                        System.out.println("Нет данных для таблицы " + tableName + " в схеме " + schema.getSchemaName());
+                    }
+                }
                 default -> System.out.println("Неизвестная схема: " + schema.getSchemaName());
             }
         }
-    }
-
-    public void initializeStatistic() {
-        calculateAndCreateStatistics(DatabaseSchema.HUNT);
-        calculateAndCreateStatistics(DatabaseSchema.ODD_BALL_EASY);
-        calculateAndCreateStatistics(DatabaseSchema.ODD_BALL_HARD);
-        calculateAndCreateStatistics(DatabaseSchema.STROOP);
-    }
-
-    @FXML
-    private void initialize() {
-        mainController = this;
-        loadFXML("mainScreen");
-        initializeStatistic();
-
-        Runtime.getRuntime().addShutdownHook(new Thread(this::deleteTestTablesFromAllSchemas));
     }
 
     private void deleteTestTablesFromAllSchemas() {
@@ -424,5 +451,134 @@ public class MainController {
                 }
             });
         }
+    }
+
+    public void handleDatabaseSettings(ActionEvent actionEvent) {
+        Dialog<ArrayList<String>> dialog = new Dialog<>();
+        dialog.setTitle("Настройки подключения к БД");
+        dialog.setHeaderText("Введите данные для подключения к базе данных:");
+
+        ButtonType loginButtonType = new ButtonType("OK", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(loginButtonType, ButtonType.CANCEL);
+
+        GridPane gridPane = new GridPane();
+        gridPane.setHgap(10);
+        gridPane.setVgap(10);
+        gridPane.setPadding(new Insets(20, 150, 10, 10));
+
+        TextField hostField = new TextField();
+        hostField.setPromptText("Хост");
+        TextField portField = new TextField();
+        portField.setPromptText("Порт");
+        TextField databaseField = new TextField();
+        databaseField.setPromptText("Имя базы данных");
+        TextField usernameField = new TextField();
+        usernameField.setPromptText("Имя пользователя");
+        PasswordField passwordField = new PasswordField();
+        passwordField.setPromptText("Пароль");
+
+        gridPane.add(new Label("Хост:"), 0, 0);
+        gridPane.add(hostField, 1, 0);
+        gridPane.add(new Label("Порт:"), 0, 1);
+        gridPane.add(portField, 1, 1);
+        gridPane.add(new Label("Имя базы данных:"), 0, 2);
+        gridPane.add(databaseField, 1, 2);
+        gridPane.add(new Label("Имя пользователя:"), 0, 3);
+        gridPane.add(usernameField, 1, 3);
+        gridPane.add(new Label("Пароль:"), 0, 4);
+        gridPane.add(passwordField, 1, 4);
+
+        dialog.getDialogPane().setContent(gridPane);
+
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton == loginButtonType) {
+                ArrayList<String> data = new ArrayList<>();
+                data.add(hostField.getText());
+                data.add(portField.getText());
+                data.add(databaseField.getText());
+                data.add(passwordField.getText());
+                return data;
+            }
+            return null;
+        });
+
+        Optional<ArrayList<String>> result = dialog.showAndWait();
+        result.ifPresent(data -> {
+            String enteredHost = data.get(0);
+            String enteredPort = data.get(1);
+            String enteredDatabase = data.get(2);
+            String enteredUser = usernameField.getText();
+            String enteredPassword = data.get(3);
+
+            System.out.println("Host: " + enteredHost);
+            System.out.println("Port: " + enteredPort);
+            System.out.println("Database: " + enteredDatabase);
+            System.out.println("User: " + enteredUser);
+            System.out.println("Password: " + enteredPassword);
+
+            try {
+                String fullUrl = "jdbc:postgresql://" + enteredHost + ":" + enteredPort + "/" + enteredDatabase;
+                Connection connection = DriverManager.getConnection(fullUrl, enteredUser, enteredPassword);
+                showAlert(Alert.AlertType.INFORMATION, "Успех", "Подключение к базе данных успешно");
+
+                changeDatabaseSettings(fullUrl, enteredUser, enteredPassword);
+
+                DatabaseHandler.setJdbcUrl(fullUrl);
+                DatabaseHandler.setUsername(enteredUser);
+                DatabaseHandler.setPassword(enteredPassword);
+
+                showAlert(Alert.AlertType.INFORMATION, "Успех", "Настройки успешно изменены");
+            } catch (SQLException e) {
+                e.printStackTrace();
+                showErrorAlert("Ошибка", "Не удалось подключиться к базе данных: " + e.getMessage());
+            }
+        });
+    }
+
+    private void showAlert(Alert.AlertType alertType, String title, String message) {
+        Alert alert = new Alert(alertType);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
+    }
+
+    private void showErrorAlert(String title, String message) {
+        showAlert(Alert.AlertType.ERROR, title, message);
+    }
+
+    public void changeDatabaseSettings(String newJdbcUrl, String newUsername, String newPassword) {
+        Preferences prefs = Preferences.userNodeForPackage(MainController.class);
+        prefs.put("jdbcUrl", newJdbcUrl);
+        prefs.put("username", newUsername);
+        prefs.put("password", newPassword);
+    }
+
+    private void loadDatabaseSettings() {
+        Preferences prefs = Preferences.userNodeForPackage(MainController.class);
+        String jdbcUrl = prefs.get("jdbcUrl", "");
+        String username = prefs.get("username", "");
+        String password = prefs.get("password", "");
+
+        DatabaseHandler.setJdbcUrl(jdbcUrl);
+        DatabaseHandler.setUsername(username);
+        DatabaseHandler.setPassword(password);
+    }
+
+    public void initializeStatistic() {
+        calculateAndCreateStatistics(DatabaseSchema.HUNT);
+        calculateAndCreateStatistics(DatabaseSchema.ODD_BALL_EASY);
+        calculateAndCreateStatistics(DatabaseSchema.ODD_BALL_HARD);
+        calculateAndCreateStatistics(DatabaseSchema.STROOP);
+    }
+
+    @FXML
+    private void initialize() {
+        mainController = this;
+        loadFXML("mainScreen");
+        initializeStatistic();
+        loadDatabaseSettings();
+
+        Runtime.getRuntime().addShutdownHook(new Thread(this::deleteTestTablesFromAllSchemas));
     }
 }
