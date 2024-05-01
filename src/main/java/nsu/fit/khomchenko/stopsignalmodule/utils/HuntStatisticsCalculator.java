@@ -8,6 +8,8 @@ import nsu.fit.khomchenko.stopsignalmodule.data.HuntData;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static nsu.fit.khomchenko.stopsignalmodule.utils.StatisticsHelper.createMap;
+
 
 public class HuntStatisticsCalculator {
     public static Map<String, Map<String, String>> calculateStatistics(List<HuntData> tableData, String tableName, DatabaseSchema schemaName, boolean saveToDatabase) {
@@ -22,35 +24,14 @@ public class HuntStatisticsCalculator {
         Map<String, String> participantInfo = StatisticsHelper.extractParticipantInfo(tableName);
         statisticsMap.put("participant_info", participantInfo);
 
-        Map<String, String> successfulStopsData = new HashMap<>();
-        successfulStopsData.put("comment", "Процент успешных торможений");
-        successfulStopsData.put("value", successfulStopsPercentage + "%");
-        statisticsMap.put("successful_stops_percentage", successfulStopsData);
 
-        Map<String, String> missedPressesData = new HashMap<>();
-        missedPressesData.put("comment", "Количество пропущенных нажатий");
-        missedPressesData.put("value", missedPresses + "%");
-        statisticsMap.put("missed_presses_count", missedPressesData);
+        statisticsMap.put("successful_stops_percentage", createMap("Процент успешных торможений", successfulStopsPercentage));
+        statisticsMap.put("missed_presses_count", createMap("Количество пропущенных нажатий", missedPresses));
+        statisticsMap.put("incorrect_presses_count", createMap("Количество неправильных нажатий", incorrectPresses));
+        statisticsMap.put("correct_presses_percentage", createMap("Процент правильных нажатий", correctPressesPercentage));
+        statisticsMap.put("average_latency_for_correct_presses", createMap("Среднее время для правильных нажатий", averageLatencyForCorrectPresses));
+        statisticsMap.put("individual_time_dispersion", createMap("Стандартное отклонение по времени для правильных нажатий", individualTimeDispersion));
 
-        Map<String, String> incorrectPressesData = new HashMap<>();
-        incorrectPressesData.put("comment", "Количество неправильных нажатий");
-        incorrectPressesData.put("value", incorrectPresses + "%");
-        statisticsMap.put("incorrect_presses_count", incorrectPressesData);
-
-        Map<String, String> correctPressesPercentageData = new HashMap<>();
-        correctPressesPercentageData.put("comment", "Процент правильных нажатий");
-        correctPressesPercentageData.put("value", correctPressesPercentage + "%");
-        statisticsMap.put("correct_presses_percentage", correctPressesPercentageData);
-
-        Map<String, String> averageLatencyForCorrectPressesData = new HashMap<>();
-        averageLatencyForCorrectPressesData.put("comment", "Среднее время для правильных нажатий");
-        averageLatencyForCorrectPressesData.put("value", String.valueOf(averageLatencyForCorrectPresses));
-        statisticsMap.put("average_latency_for_correct_presses", averageLatencyForCorrectPressesData);
-
-        Map<String, String> individualTimeDispersionData = new HashMap<>();
-        individualTimeDispersionData.put("comment", "Среднее квадратичное отклонение по времени для правильных нажатий");
-        individualTimeDispersionData.put("value", String.valueOf(individualTimeDispersion));
-        statisticsMap.put("individual_time_dispersion", individualTimeDispersionData);
 
         if (saveToDatabase) {
             List<Double> values = Arrays.asList(

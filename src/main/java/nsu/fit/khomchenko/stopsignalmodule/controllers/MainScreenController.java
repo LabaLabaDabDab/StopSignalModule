@@ -9,9 +9,11 @@ import nsu.fit.khomchenko.stopsignalmodule.DatabaseHandler;
 import nsu.fit.khomchenko.stopsignalmodule.DatabaseSchema;
 import nsu.fit.khomchenko.stopsignalmodule.data.HuntData;
 import nsu.fit.khomchenko.stopsignalmodule.data.OddBallData;
+import nsu.fit.khomchenko.stopsignalmodule.data.StroopData;
 import nsu.fit.khomchenko.stopsignalmodule.utils.HuntStatisticsCalculator;
 import nsu.fit.khomchenko.stopsignalmodule.utils.InputDialogHelper;
 import nsu.fit.khomchenko.stopsignalmodule.utils.OddBallStatisticsCalculator;
+import nsu.fit.khomchenko.stopsignalmodule.utils.StroopStatisticsCalculator;
 
 import java.io.File;
 import java.util.Arrays;
@@ -140,6 +142,16 @@ public class MainScreenController {
                                     System.out.println("Нет данных для таблицы " + tableName + " в схеме " + selectedSchema.getSchemaName());
                                 }
                             }
+                            case STROOP -> {
+                                List<StroopData> stroopDataList = DatabaseHandler.getStroopDataForSchema(selectedSchema, tableName);
+                                if (!stroopDataList.isEmpty()) {
+                                    countByGroupFuture = CompletableFuture.supplyAsync(() -> countByGroup(selectedSchema, true, true, 0, 120));
+                                    averageStatisticsFuture = CompletableFuture.supplyAsync(() -> getAverageStatistics(selectedSchema, true, true, 0, 120));
+                                    statisticsResultFuture = CompletableFuture.supplyAsync(() -> StroopStatisticsCalculator.calculateStatistics(stroopDataList, tableName, selectedSchema, false));
+                                } else {
+                                    System.out.println("Нет данных для таблицы " + tableName + " в схеме " + selectedSchema.getSchemaName());
+                                }
+                            }
                             default -> System.out.println("Неизвестная схема: " + selectedSchema.getSchemaName());
                         }
 
@@ -159,6 +171,7 @@ public class MainScreenController {
                                     Map<String, Double> standardDeviation = getStandardDeviationStatistics(selectedSchema, true, true, 0, 120, averageStatisticsResultFinal, countByGroupFutureFinal);
 
                                     mainController.switchToStatistic();
+                                    mainController.getStatisticsController().setSelectedTableName(tableName);
                                     mainController.getStatisticsController().setStatisticsResult(statisticsResultFinal);
                                     mainController.getStatisticsController().setSelectedSchema(selectedSchema);
                                     mainController.getStatisticsController().displayStatistics(averageStatisticsResultFinal, standardDeviation);

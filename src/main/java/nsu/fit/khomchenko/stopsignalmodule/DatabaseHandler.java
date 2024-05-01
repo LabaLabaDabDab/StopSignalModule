@@ -3,6 +3,7 @@ package nsu.fit.khomchenko.stopsignalmodule;
 import javafx.scene.control.Alert;
 import nsu.fit.khomchenko.stopsignalmodule.data.HuntData;
 import nsu.fit.khomchenko.stopsignalmodule.data.OddBallData;
+import nsu.fit.khomchenko.stopsignalmodule.data.StroopData;
 
 import java.io.*;
 import java.sql.*;
@@ -637,6 +638,67 @@ public class DatabaseHandler {
         }
 
         return stdDeviationValuesMap;
+    }
+
+    public static List<StroopData> getStroopDataForSchema(DatabaseSchema schema, String tableName) {
+        List<StroopData> dataList = new ArrayList<>();
+        try (Connection connection = connect(schema.getSchemaName())) {
+            if (connection != null) {
+                try (Statement statement = connection.createStatement()) {
+                    ResultSet resultSet = statement.executeQuery("SELECT * FROM " + schema.getSchemaName() + "." + tableName + " WHERE trialcode != 'CRTTpractice'");
+                    while (resultSet.next()) {
+                        StroopData data = new StroopData();
+                        data.setDate(resultSet.getString("date"));
+                        data.setTime(resultSet.getString("time"));
+                        data.setSubject(resultSet.getString("subject"));
+                        data.setBlockcode(resultSet.getString("blockcode"));
+                        data.setTrialcode(resultSet.getString("trialcode"));
+                        data.setStimulusitem1(resultSet.getString("stimulusitem1"));
+                        data.setStimulusitem2(resultSet.getString("stimulusitem2"));
+                        data.setStimulusitem3(resultSet.getString("stimulusitem3"));
+                        data.setStimulusitem4(resultSet.getString("stimulusitem4"));
+                        data.setTrialnum(resultSet.getString("trialnum"));
+                        data.setLatency(resultSet.getString("latency"));
+                        data.setResponse(resultSet.getString("response"));
+                        data.setCorrect(resultSet.getString("correct"));
+                        dataList.add(data);
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return dataList;
+    }
+
+    public static boolean renameTable(DatabaseSchema schema, String oldTableName, String newTableName) {
+        try (Connection connection = connect(schema.getSchemaName())) {
+            if (connection != null) {
+                try (Statement statement = connection.createStatement()) {
+                    statement.executeUpdate("ALTER TABLE " + schema.getSchemaName() + "." + oldTableName + " RENAME TO " + newTableName);
+                    updateSummaryTableOnTableRename(schema, oldTableName, newTableName);
+                    return true;
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    private static void updateSummaryTableOnTableRename(DatabaseSchema schema, String oldTableName, String newTableName) {
+        try (Connection connection = connect(schema.getSchemaName())) {
+            if (connection != null) {
+                try (PreparedStatement statement = connection.prepareStatement(
+                        "UPDATE " + schema.getSchemaName() + ".summary_table SET source_table_name = ? WHERE source_table_name = ?")) {
+                    statement.setString(1, newTableName);
+                    statement.setString(2, oldTableName);
+                    statement.executeUpdate();
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
 }

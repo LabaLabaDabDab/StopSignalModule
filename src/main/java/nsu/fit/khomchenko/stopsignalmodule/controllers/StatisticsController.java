@@ -5,7 +5,6 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.scene.control.*;
-import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
@@ -19,6 +18,7 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
 import static nsu.fit.khomchenko.stopsignalmodule.DatabaseHandler.*;
+import static nsu.fit.khomchenko.stopsignalmodule.controllers.MainController.*;
 
 public class StatisticsController {
     @FXML
@@ -30,6 +30,8 @@ public class StatisticsController {
     public VBox VboxForData;
     @FXML
     public Button applyButton;
+    @FXML
+    public Button saveButton;
 
 
     @FXML
@@ -39,6 +41,8 @@ public class StatisticsController {
     private CheckBox femaleCheckBox;
 
     private DatabaseSchema selectedSchema;
+
+    private String selectedTableName;
 
     private DatabaseHandler databaseHandler;
 
@@ -50,6 +54,10 @@ public class StatisticsController {
 
     public void setSelectedSchema(DatabaseSchema schema) {
         this.selectedSchema = schema;
+    }
+
+    public void setSelectedTableName(String tableName) {
+        this.selectedTableName = tableName;
     }
 
     public void setMainController(MainController mainController) {
@@ -122,16 +130,16 @@ public class StatisticsController {
         }
         
         Label participantInfoLabel = new Label("Информация об испытуемом:");
-        participantInfoLabel.setFont(Font.font("Arial", FontWeight.BOLD, 18));
+        participantInfoLabel.setFont(Font.font("Arial", FontWeight.BOLD, 16));
         participantInfoLabel.setPadding(new Insets(5));
         VboxForData.getChildren().add(participantInfoLabel);
 
         Label infoLabel = new Label("Пол: " + gender + ", Имя: " + testName + ", Возраст: " + age);
-        infoLabel.setFont(Font.font("Arial", FontWeight.BOLD, 18));
+        infoLabel.setFont(Font.font("Arial", FontWeight.BOLD, 16));
         infoLabel.setPadding(new Insets(5));
         VboxForData.getChildren().add(infoLabel);
 
-        Font fontData = Font.font("Arial", FontWeight.BOLD, 25);
+        Font fontData = Font.font("Arial", FontWeight.BOLD, 18);
         Insets labelData = new Insets(5);
 
         Font fontStatisticData = Font.font("Arial", FontWeight.BOLD, 16);
@@ -208,7 +216,7 @@ public class StatisticsController {
             VboxForData.getChildren().add(averageLabel);
         }
 
-        VboxForData.getChildren().add(new Label(" "));
+       /* VboxForData.getChildren().add(new Label(" "));
 
         for (Map.Entry<String, Double> entry : standardDeviation.entrySet()) {
             String columnName = entry.getKey();
@@ -228,7 +236,7 @@ public class StatisticsController {
             Region separator = new Region();
             separator.setPrefHeight(180);
             VboxForData.getChildren().add(separator);
-        }
+        }*/
 
     }
 
@@ -249,6 +257,42 @@ public class StatisticsController {
         standardDeviationFuture.thenAcceptAsync(standardDeviation -> {
             Platform.runLater(() -> displayStatistics(averageStatisticsFuture.join(), standardDeviation));
         });
+    }
+
+    @FXML
+    private void saveStatistics(ActionEvent event) {
+        String newTableName = selectedTableName;
+
+        ChoiceDialog<String> dialog = new ChoiceDialog<>("здоровый", "здоровый", "не здоровый");
+        dialog.setTitle("Выбор типа сохранения");
+        dialog.setHeaderText("Выберите тип сохранения испытуемого:");
+        dialog.setContentText("Тип:");
+
+        Optional<String> result = dialog.showAndWait();
+
+        if (result.isPresent()) {
+            String selectedOption = result.get();
+            if (selectedOption.equals("не здоровый")) {
+                newTableName = newTableName + "_unhealthy";
+            } else {
+                newTableName = newTableName.replace("_test", "");
+            }
+
+            boolean success = DatabaseHandler.renameTable(selectedSchema, selectedTableName, newTableName);
+
+
+            if (success && selectedOption.equals("здоровый")) {
+                List<String> columnNames = DatabaseHandler.getColumnNames(selectedSchema, newTableName);
+                List<Double> statistics = mainController.calculateStatisticsForTable(selectedSchema, newTableName);
+                DatabaseHandler.saveStatisticsToSummaryTable(selectedSchema, newTableName, columnNames, statistics);
+            }
+
+            if (success) {
+                System.out.println("Таблица успешно переименована в " + newTableName);
+            } else {
+                System.out.println("Ошибка при переименовании таблицы");
+            }
+        }
     }
 
     @FXML

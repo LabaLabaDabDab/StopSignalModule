@@ -49,11 +49,18 @@
                                 </VBox>
                             </children>
                         </HBox>
-                        <Button fx:id="applyButton" onAction="#applyFilters" alignment="CENTER" contentDisplay="TOP" minWidth="-Infinity" mnemonicParsing="false" prefHeight="31.0" prefWidth="362.0" text="ПРИМЕНИТЬ" textAlignment="CENTER">
-                            <font>
-                                <Font size="15.0" />
-                            </font>
-                        </Button>
+                        <VBox spacing="10">
+                            <Button fx:id="applyButton" onAction="#applyFilters" alignment="CENTER" contentDisplay="TOP" minWidth="-Infinity" mnemonicParsing="false" prefHeight="31.0" prefWidth="362.0" text="ПРИМЕНИТЬ" textAlignment="CENTER">
+                                <font>
+                                    <Font size="15.0" />
+                                </font>
+                            </Button>
+                            <Button fx:id="saveButton" onAction="#saveStatistics" alignment="CENTER" contentDisplay="TOP" minWidth="-Infinity" mnemonicParsing="false" prefHeight="31.0" prefWidth="362.0" text="СОХРАНИТЬ" textAlignment="CENTER">
+                                <font>
+                                    <Font size="15.0" />
+                                </font>
+                            </Button>
+                        </VBox>
                     </children>
                 </VBox>
                 <VBox fx:id="VboxForData" prefHeight="400.0" prefWidth="402.0" HBox.hgrow="ALWAYS">

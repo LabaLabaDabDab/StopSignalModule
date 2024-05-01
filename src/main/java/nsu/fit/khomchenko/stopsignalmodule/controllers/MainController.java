@@ -2,7 +2,6 @@ package nsu.fit.khomchenko.stopsignalmodule.controllers;
 
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
-import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -13,13 +12,14 @@ import javafx.scene.control.*;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.stage.FileChooser;
-import javafx.util.Pair;
 import nsu.fit.khomchenko.stopsignalmodule.DatabaseHandler;
 import nsu.fit.khomchenko.stopsignalmodule.DatabaseSchema;
 import nsu.fit.khomchenko.stopsignalmodule.data.HuntData;
 import nsu.fit.khomchenko.stopsignalmodule.data.OddBallData;
+import nsu.fit.khomchenko.stopsignalmodule.data.StroopData;
 import nsu.fit.khomchenko.stopsignalmodule.utils.HuntStatisticsCalculator;
 import nsu.fit.khomchenko.stopsignalmodule.utils.OddBallStatisticsCalculator;
+import nsu.fit.khomchenko.stopsignalmodule.utils.StroopStatisticsCalculator;
 
 import java.io.File;
 import java.io.IOException;
@@ -29,8 +29,8 @@ import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.stream.Collectors;
 import java.util.prefs.Preferences;
+import java.util.stream.Collectors;
 
 import static nsu.fit.khomchenko.stopsignalmodule.utils.InputDialogHelper.*;
 
@@ -356,7 +356,45 @@ public class MainController {
         }
     }
 
-    private void calculateAndCreateStatistics(DatabaseSchema schema) {
+    public List<Double> calculateStatisticsForTable(DatabaseSchema schema, String tableName) {
+        List<Double> statistics = new ArrayList<>();
+
+        switch (schema) {
+            case HUNT -> {
+                List<HuntData> huntDataList = DatabaseHandler.getHuntDataForTable(schema, tableName);
+                if (!huntDataList.isEmpty()) {
+                    Map<String, Map<String, String>> statisticsResult = HuntStatisticsCalculator.calculateStatistics(huntDataList, tableName, schema, true);
+                    // Здесь можно добавить логику для расчета статистики и добавления значений в список statistics
+                } else {
+                    System.out.println("Нет данных для таблицы " + tableName + " в схеме HUNT");
+                }
+            }
+            case ODD_BALL_EASY, ODD_BALL_HARD -> {
+                List<OddBallData> oddBallDataList = DatabaseHandler.getOddBallDataForSchema(schema, tableName);
+                if (!oddBallDataList.isEmpty()) {
+                    Map<String, Map<String, String>> statisticsResult = OddBallStatisticsCalculator.calculateStatistics(oddBallDataList, tableName, schema, true);
+                    // Здесь можно добавить логику для расчета статистики и добавления значений в список statistics
+                } else {
+                    System.out.println("Нет данных для таблицы " + tableName + " в схеме " + schema.getSchemaName());
+                }
+            }
+            case STROOP -> {
+                List<StroopData> stroopDataList = DatabaseHandler.getStroopDataForSchema(schema, tableName);
+                if (!stroopDataList.isEmpty()) {
+                    Map<String, Map<String, String>> statisticsResult = StroopStatisticsCalculator.calculateStatistics(stroopDataList, tableName, schema, true);
+                    // Здесь можно добавить логику для расчета статистики и добавления значений в список statistics
+                } else {
+                    System.out.println("Нет данных для таблицы " + tableName + " в схеме " + schema.getSchemaName());
+                }
+            }
+            default -> System.out.println("Неизвестная схема: " + schema.getSchemaName());
+        }
+
+        return statistics;
+    }
+
+
+    public void calculateAndCreateStatistics(DatabaseSchema schema) {
         List<String> tableNames = DatabaseHandler.getAllTables(schema);
         if (tableNames.isEmpty()) {
             System.out.println("Нет данных для схемы " + schema);
@@ -379,6 +417,14 @@ public class MainController {
                     List<OddBallData> oddBallDataList = DatabaseHandler.getOddBallDataForSchema(schema, tableName);
                     if (!oddBallDataList.isEmpty()) {
                         Map<String, Map<String, String>> statisticsResult = OddBallStatisticsCalculator.calculateStatistics(oddBallDataList, tableName, schema, true);
+                    } else {
+                        System.out.println("Нет данных для таблицы " + tableName + " в схеме " + schema.getSchemaName());
+                    }
+                }
+                case STROOP -> {
+                    List<StroopData> stroopDataList = DatabaseHandler.getStroopDataForSchema(schema, tableName);
+                    if (!stroopDataList.isEmpty()) {
+                        Map<String, Map<String, String>> statisticsResult = StroopStatisticsCalculator.calculateStatistics(stroopDataList, tableName, schema, true);
                     } else {
                         System.out.println("Нет данных для таблицы " + tableName + " в схеме " + schema.getSchemaName());
                     }
