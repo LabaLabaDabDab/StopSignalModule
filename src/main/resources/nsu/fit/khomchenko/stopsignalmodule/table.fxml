@@ -25,7 +25,8 @@
                     </FXCollections>
                 </items>
             </ComboBox>
-         <Button fx:id="statisticButton" mnemonicParsing="false" prefHeight="26.0" prefWidth="315.0" text="Статистика по всем испытуемым" />
+         <Button fx:id="statisticButton" mnemonicParsing="false" prefHeight="26.0" prefWidth="315.0" text="Статистика по всем здоровым испытуемым" />
+         <Button fx:id="statisticUnhealthyButton" mnemonicParsing="false" prefHeight="26.0" prefWidth="315.0" text="Статистика по всем не здоровым испытуемым" />
          <Label fx:id="testSubjectsLabel" style="-fx-font-size: 25px; -fx-font-weight: bold;" text="Испытуемые:" />
             <TextField fx:id="searchField" onKeyReleased="#handleSearch" prefHeight="2.0" prefWidth="314.0" promptText="Поиск..." />
             <ListView fx:id="tableListView" maxHeight="1.7976931348623157E308" prefHeight="400.0" prefWidth="294.0" VBox.vgrow="ALWAYS" />

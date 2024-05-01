@@ -273,6 +273,7 @@ public class StatisticsController {
         if (result.isPresent()) {
             String selectedOption = result.get();
             if (selectedOption.equals("не здоровый")) {
+                newTableName = newTableName.replace("_test", "");
                 newTableName = newTableName + "_unhealthy";
             } else {
                 newTableName = newTableName.replace("_test", "");
@@ -282,9 +283,7 @@ public class StatisticsController {
 
 
             if (success && selectedOption.equals("здоровый")) {
-                List<String> columnNames = DatabaseHandler.getColumnNames(selectedSchema, newTableName);
                 List<Double> statistics = mainController.calculateStatisticsForTable(selectedSchema, newTableName);
-                DatabaseHandler.saveStatisticsToSummaryTable(selectedSchema, newTableName, columnNames, statistics);
             }
 
             if (success) {

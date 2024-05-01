@@ -356,15 +356,14 @@ public class MainController {
         }
     }
 
-    public List<Double> calculateStatisticsForTable(DatabaseSchema schema, String tableName) {
-        List<Double> statistics = new ArrayList<>();
+    private Map<String, Map<String, String>> processStatistics(DatabaseSchema schema, String tableName) {
+        Map<String, Map<String, String>> statisticsResult = new HashMap<>();
 
         switch (schema) {
             case HUNT -> {
                 List<HuntData> huntDataList = DatabaseHandler.getHuntDataForTable(schema, tableName);
                 if (!huntDataList.isEmpty()) {
-                    Map<String, Map<String, String>> statisticsResult = HuntStatisticsCalculator.calculateStatistics(huntDataList, tableName, schema, true);
-                    // Здесь можно добавить логику для расчета статистики и добавления значений в список statistics
+                    statisticsResult = HuntStatisticsCalculator.calculateStatistics(huntDataList, tableName, schema, true);
                 } else {
                     System.out.println("Нет данных для таблицы " + tableName + " в схеме HUNT");
                 }
@@ -372,8 +371,7 @@ public class MainController {
             case ODD_BALL_EASY, ODD_BALL_HARD -> {
                 List<OddBallData> oddBallDataList = DatabaseHandler.getOddBallDataForSchema(schema, tableName);
                 if (!oddBallDataList.isEmpty()) {
-                    Map<String, Map<String, String>> statisticsResult = OddBallStatisticsCalculator.calculateStatistics(oddBallDataList, tableName, schema, true);
-                    // Здесь можно добавить логику для расчета статистики и добавления значений в список statistics
+                    statisticsResult = OddBallStatisticsCalculator.calculateStatistics(oddBallDataList, tableName, schema, true);
                 } else {
                     System.out.println("Нет данных для таблицы " + tableName + " в схеме " + schema.getSchemaName());
                 }
@@ -381,8 +379,7 @@ public class MainController {
             case STROOP -> {
                 List<StroopData> stroopDataList = DatabaseHandler.getStroopDataForSchema(schema, tableName);
                 if (!stroopDataList.isEmpty()) {
-                    Map<String, Map<String, String>> statisticsResult = StroopStatisticsCalculator.calculateStatistics(stroopDataList, tableName, schema, true);
-                    // Здесь можно добавить логику для расчета статистики и добавления значений в список statistics
+                    statisticsResult = StroopStatisticsCalculator.calculateStatistics(stroopDataList, tableName, schema, true);
                 } else {
                     System.out.println("Нет данных для таблицы " + tableName + " в схеме " + schema.getSchemaName());
                 }
@@ -390,9 +387,14 @@ public class MainController {
             default -> System.out.println("Неизвестная схема: " + schema.getSchemaName());
         }
 
-        return statistics;
+        return statisticsResult;
     }
 
+    public List<Double> calculateStatisticsForTable(DatabaseSchema schema, String tableName) {
+        List<Double> statistics = new ArrayList<>();
+        Map<String, Map<String, String>> statisticsResult = processStatistics(schema, tableName);
+        return statistics;
+    }
 
     public void calculateAndCreateStatistics(DatabaseSchema schema) {
         List<String> tableNames = DatabaseHandler.getAllTables(schema);
@@ -401,36 +403,10 @@ public class MainController {
             return;
         }
         for (String tableName : tableNames) {
-            if (tableName.equals("summary_table") || tableName.endsWith("_test")) {
+            if (tableName.equals("summary_table") || tableName.endsWith("_test") || tableName.equals("summary_table_unhealthy")) {
                 continue;
             }
-            switch (schema) {
-                case HUNT -> {
-                    List<HuntData> huntDataList = DatabaseHandler.getHuntDataForTable(schema, tableName);
-                    if (!huntDataList.isEmpty()) {
-                        Map<String, Map<String, String>> statisticsResult = HuntStatisticsCalculator.calculateStatistics(huntDataList, tableName, schema, true);
-                    } else {
-                        System.out.println("Нет данных для таблицы " + tableName + " в схеме " + schema);
-                    }
-                }
-                case ODD_BALL_EASY, ODD_BALL_HARD -> {
-                    List<OddBallData> oddBallDataList = DatabaseHandler.getOddBallDataForSchema(schema, tableName);
-                    if (!oddBallDataList.isEmpty()) {
-                        Map<String, Map<String, String>> statisticsResult = OddBallStatisticsCalculator.calculateStatistics(oddBallDataList, tableName, schema, true);
-                    } else {
-                        System.out.println("Нет данных для таблицы " + tableName + " в схеме " + schema.getSchemaName());
-                    }
-                }
-                case STROOP -> {
-                    List<StroopData> stroopDataList = DatabaseHandler.getStroopDataForSchema(schema, tableName);
-                    if (!stroopDataList.isEmpty()) {
-                        Map<String, Map<String, String>> statisticsResult = StroopStatisticsCalculator.calculateStatistics(stroopDataList, tableName, schema, true);
-                    } else {
-                        System.out.println("Нет данных для таблицы " + tableName + " в схеме " + schema.getSchemaName());
-                    }
-                }
-                default -> System.out.println("Неизвестная схема: " + schema.getSchemaName());
-            }
+            processStatistics(schema, tableName);
         }
     }
 
