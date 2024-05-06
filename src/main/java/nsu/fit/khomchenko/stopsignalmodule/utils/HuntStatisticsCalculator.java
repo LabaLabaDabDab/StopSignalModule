@@ -63,7 +63,7 @@ public class HuntStatisticsCalculator {
     private static double calculateSuccessfulStopsPercentage(List<HuntData> dataList) {
         List<HuntData> filteredData = dataList.stream()
                 .filter(data -> "CRTTstop2".equals(data.getTrialcode()))
-                .toList();
+                .collect(Collectors.toList());
 
         // Подсчитываем количество успешных остановок среди отфильтрованных данных
         long successfulStopsCount = filteredData.stream()
@@ -102,7 +102,7 @@ public class HuntStatisticsCalculator {
     private static double calculateAverageLatencyForCorrectPresses(List<HuntData> dataList) {
         List<HuntData> correctPresses = dataList.stream()
                 .filter(data -> Integer.parseInt(data.getLatency()) < 750 && Integer.parseInt(data.getCorrect()) == 1)
-                .toList();
+                .collect(Collectors.toList());
 
         double totalLatency = correctPresses.stream()
                 .mapToDouble(data -> Double.parseDouble(data.getLatency()))
@@ -115,7 +115,7 @@ public class HuntStatisticsCalculator {
     private static double calculateIndividualTimeDispersion(List<HuntData> dataList) {
         List<HuntData> correctPresses = dataList.stream()
                 .filter(data -> Integer.parseInt(data.getLatency()) < 750 && Integer.parseInt(data.getCorrect()) == 1)
-                .toList();
+                .collect(Collectors.toList());
 
         double averageLatency = calculateAverageLatencyForCorrectPresses(dataList);
 

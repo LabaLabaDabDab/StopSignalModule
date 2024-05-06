@@ -416,7 +416,7 @@ public class MainController {
 
             List<String> testTableNames = tableNames.stream()
                     .filter(tableName -> tableName.endsWith("_test"))
-                    .toList();
+                    .collect(Collectors.toList());
 
             testTableNames.forEach(tableName -> {
                 boolean success = DatabaseHandler.deleteTable(schema, tableName);
@@ -548,12 +548,38 @@ public class MainController {
         calculateAndCreateStatistics(DatabaseSchema.STROOP);
     }
 
+    private boolean isDatabaseConnected() {
+        Connection connection = DatabaseHandler.connect();
+        if (connection != null) {
+            try {
+                connection.close();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    private void recalculateStatistics() {
+        initializeStatistic();
+        showAlert(Alert.AlertType.INFORMATION, "Информация", "Статистика успешно пересчитана.");
+    }
+
+
     @FXML
     private void initialize() {
         mainController = this;
         loadFXML("mainScreen");
-        initializeStatistic();
+
         loadDatabaseSettings();
+
+        if (!isDatabaseConnected()) {
+            showAlert(Alert.AlertType.WARNING, "Предупреждение", "Отсутствует подключение к базе данных. Пожалуйста, введите данные для подключения.");
+        } else {
+            recalculateStatistics();
+        }
 
         Runtime.getRuntime().addShutdownHook(new Thread(this::deleteTestTablesFromAllSchemas));
     }

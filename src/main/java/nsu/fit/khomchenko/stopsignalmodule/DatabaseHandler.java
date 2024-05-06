@@ -12,7 +12,7 @@ import java.util.*;
 public class DatabaseHandler {
     public static String jdbcUrl = "jdbc:postgresql://localhost:5432/postgres";
     private static String username = "postgres";
-    private static String password = "1";
+    private static String password = "12";
 
     public static void setJdbcUrl(String newJdbcUrl) {
         jdbcUrl = newJdbcUrl;

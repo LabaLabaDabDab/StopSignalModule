@@ -7,7 +7,7 @@
 <?import javafx.scene.layout.VBox?>
 
 <?import javafx.scene.control.SeparatorMenuItem?>
-<BorderPane fx:id="borderPane" prefHeight="246.0" prefWidth="878.0" xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1" fx:controller="nsu.fit.khomchenko.stopsignalmodule.controllers.MainController">
+<BorderPane fx:id="borderPane" prefHeight="246.0" prefWidth="878.0" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="nsu.fit.khomchenko.stopsignalmodule.controllers.MainController">
     <top>
         <MenuBar fx:id="menuBar" prefHeight="21.0" prefWidth="877.0" VBox.vgrow="NEVER">
             <menus>

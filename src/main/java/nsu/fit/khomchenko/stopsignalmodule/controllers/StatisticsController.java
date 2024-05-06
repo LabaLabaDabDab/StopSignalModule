@@ -130,19 +130,19 @@ public class StatisticsController {
         }
         
         Label participantInfoLabel = new Label("Информация об испытуемом:");
-        participantInfoLabel.setFont(Font.font("Arial", FontWeight.BOLD, 16));
+        participantInfoLabel.setFont(Font.font("Arial", FontWeight.BOLD, 18));
         participantInfoLabel.setPadding(new Insets(5));
         VboxForData.getChildren().add(participantInfoLabel);
 
         Label infoLabel = new Label("Пол: " + gender + ", Имя: " + testName + ", Возраст: " + age);
-        infoLabel.setFont(Font.font("Arial", FontWeight.BOLD, 16));
+        infoLabel.setFont(Font.font("Arial", FontWeight.BOLD, 18));
         infoLabel.setPadding(new Insets(5));
         VboxForData.getChildren().add(infoLabel);
 
-        Font fontData = Font.font("Arial", FontWeight.BOLD, 18);
+        Font fontData = Font.font("Arial", FontWeight.BOLD, 20);
         Insets labelData = new Insets(5);
 
-        Font fontStatisticData = Font.font("Arial", FontWeight.BOLD, 16);
+        Font fontStatisticData = Font.font("Arial", FontWeight.BOLD, 18);
         Insets labelStatisticData = new Insets(5);
 
 

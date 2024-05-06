@@ -15,7 +15,6 @@ public class StatisticsHelper {
         return data;
     }
 
-
     public static Map<String, String> extractParticipantInfo(String tableName) {
         Map<String, String> participantInfo = new HashMap<>();
         String[] parts = tableName.split("_");

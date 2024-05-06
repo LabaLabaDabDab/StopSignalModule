@@ -73,5 +73,4 @@ public class InputDialogHelper {
             return Optional.empty();
         }
     }
-
 }

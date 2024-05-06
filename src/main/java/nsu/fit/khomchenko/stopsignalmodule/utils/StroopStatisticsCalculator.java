@@ -8,6 +8,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static nsu.fit.khomchenko.stopsignalmodule.utils.StatisticsHelper.createMap;
 
@@ -21,7 +22,7 @@ public class StroopStatisticsCalculator {
                 .filter(data -> !data.getTrialcode().equals("Warning") &&
                         !data.getTrialcode().equals("Black") &&
                         !data.getTrialcode().equals("White"))
-                .toList();
+                .collect(Collectors.toList());
 
         double successfulAnswersAllPercentage = calculateSuccessfulAnswersAllPercentage(filteredData);
         double averageLatencyForCorrectAllPresses = calculateAverageLatencyForCorrectPresses(filteredData);
@@ -117,7 +118,7 @@ public class StroopStatisticsCalculator {
     private static double calculateAverageLatencyForCorrectStroopPresses(List<StroopData> dataList) {
         List<StroopData> filteredData = dataList.stream()
                 .filter(data -> data.getCorrect().equals("1"))
-                .toList();
+                .collect(Collectors.toList());
 
         double totalReactionTime = filteredData.stream()
                 .mapToDouble(data -> Double.parseDouble(data.getLatency() + 350))
@@ -149,7 +150,7 @@ public class StroopStatisticsCalculator {
     private static double calculateAverageLatencyForCorrectPresses(List<StroopData> dataList) {
         List<StroopData> filteredData = dataList.stream()
                 .filter(data -> (data.getTrialcode().equals("BBLT") || data.getTrialcode().equals("LTBB")) && data.getCorrect().equals("1"))
-                .toList();
+                .collect(Collectors.toList());
 
         double totalReactionTime = filteredData.stream()
                 .mapToDouble(data -> Double.parseDouble(data.getLatency() + 350))
@@ -181,7 +182,7 @@ public class StroopStatisticsCalculator {
     private static double calculateAverageLatencyForCorrectNonStroopPresses(List<StroopData> dataList) {
         List<StroopData> filteredData = dataList.stream()
                 .filter(data -> (data.getTrialcode().equals("BTLB") || data.getTrialcode().equals("LBBT") ) && data.getCorrect().equals("1"))
-                .toList();
+                .collect(Collectors.toList());
 
         double totalReactionTime = filteredData.stream()
                 .mapToDouble(data -> Double.parseDouble(data.getLatency() + 350))

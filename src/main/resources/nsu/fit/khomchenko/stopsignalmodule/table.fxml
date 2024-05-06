@@ -14,7 +14,7 @@
 
 <?import javafx.scene.image.Image?>
 <?import javafx.scene.image.ImageView?>
-<VBox alignment="TOP_CENTER" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" VBox.vgrow="ALWAYS" xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1" fx:controller="nsu.fit.khomchenko.stopsignalmodule.controllers.TableController">
+<VBox alignment="TOP_CENTER" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" VBox.vgrow="ALWAYS" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="nsu.fit.khomchenko.stopsignalmodule.controllers.TableController">
     <HBox maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" HBox.hgrow="ALWAYS" VBox.vgrow="ALWAYS">
         <VBox focusTraversable="true" HBox.hgrow="NEVER" VBox.vgrow="ALWAYS">
             <Label fx:id="schemaLabel" style="-fx-font-size: 25px; -fx-font-weight: bold;" text="Методика тестирования:" />
@@ -37,12 +37,7 @@
                <Pane prefHeight="36.0" prefWidth="371.0">
                   <children>
                       <ImageView fx:id="refreshButton" fitHeight="36.0" fitWidth="45.0" onMouseClicked="#handleRefreshButtonClick" onMouseEntered="#handleRefreshButtonHover" onMouseExited="#handleRefreshButtonExit" pickOnBounds="true" preserveRatio="true">
-                          <image>
-                              <Image url="C:\Users\thest\IdeaProjects\StopSignalModule\src\main\resources\icons\refresh_icon.png" />
-                          </image>
-                          <effect>
-                              <DropShadow radius="10.0" />
-                          </effect>
+
                       </ImageView>
                   </children>
                </Pane>
