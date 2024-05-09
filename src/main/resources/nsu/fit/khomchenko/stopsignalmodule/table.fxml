@@ -14,6 +14,7 @@
 
 <?import javafx.scene.image.Image?>
 <?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.StackPane?>
 <VBox alignment="TOP_CENTER" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" VBox.vgrow="ALWAYS" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="nsu.fit.khomchenko.stopsignalmodule.controllers.TableController">
     <HBox maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" HBox.hgrow="ALWAYS" VBox.vgrow="ALWAYS">
         <VBox focusTraversable="true" HBox.hgrow="NEVER" VBox.vgrow="ALWAYS">
@@ -37,11 +38,17 @@
                <Pane prefHeight="36.0" prefWidth="371.0">
                   <children>
                       <ImageView fx:id="refreshButton" fitHeight="36.0" fitWidth="45.0" onMouseClicked="#handleRefreshButtonClick" onMouseEntered="#handleRefreshButtonHover" onMouseExited="#handleRefreshButtonExit" pickOnBounds="true" preserveRatio="true">
-
+                          <effect>
+                              <DropShadow radius="10.0" />
+                          </effect>
                       </ImageView>
                   </children>
                </Pane>
-                  <Label fx:id="tableNameLabel" prefHeight="36.0" prefWidth="766.0" style="-fx-font-size: 25px; -fx-font-weight: bold;" text="Данные испытуемого:" />
+                <StackPane prefHeight="36.0" prefWidth="766.0" HBox.hgrow="ALWAYS" alignment="CENTER_LEFT">
+                    <children>
+                        <Label fx:id="tableNameLabel" style="-fx-font-size: 20px; -fx-font-weight: bold;" text="Данные испытуемого:" />
+                    </children>
+                </StackPane>
             </children>
          </HBox>
             <TableView fx:id="tableView" prefHeight="518.0" prefWidth="1156.0" VBox.vgrow="ALWAYS">

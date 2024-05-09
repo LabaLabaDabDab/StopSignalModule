@@ -21,12 +21,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static nsu.fit.khomchenko.stopsignalmodule.DatabaseHandler.*;
 
 public class MainScreenController {
     @FXML
     public Label schemaChoiceLabel;
+    @FXML
+    private ProgressBar progressBar;
 
     @FXML
     public ComboBox<DatabaseSchema> schemaChoiceComboBox;
@@ -69,8 +72,37 @@ public class MainScreenController {
         }
     }
 
+   /* private CompletableFuture<Optional<String>> handleDialogTestInterfaceAsync(File selectedFile, DatabaseSchema selectedSchema) {
+        return CompletableFuture.supplyAsync(() -> {
+            System.out.println("handleDialogTestInterfaceAsync runs in thread: " + Thread.currentThread().getName());
+            Optional<String> testName = InputDialogHelper.promptTestPersonName();
+            if (testName.isEmpty()) {
+                return Optional.empty();
+            }
+
+            Optional<String> gender = InputDialogHelper.promptGender();
+            if (gender.isEmpty()) {
+                return Optional.empty();
+            }
+
+            Optional<Integer> age = InputDialogHelper.promptAge();
+            if (age.isEmpty()) {
+                return Optional.empty();
+            }
+
+            String tableName = testName.get() + "_" + gender.get() + "_" + age.get() + "_test";
+            String schemaName = selectedSchema.getSchemaName();
+            String filePath = selectedFile.getAbsolutePath();
+
+            DatabaseHandler.loadAndSaveData(filePath, tableName, schemaName);
+
+            return Optional.of(tableName);
+        });
+    }*/
+
     private CompletableFuture<Optional<String>> handleDialogTestInterfaceAsync(File selectedFile, DatabaseSchema selectedSchema) {
         return CompletableFuture.supplyAsync(() -> {
+            System.out.println("handleDialogTestInterfaceAsync runs in thread: " + Thread.currentThread().getName());
             Optional<String> testName = InputDialogHelper.promptTestPersonName();
             if (testName.isEmpty()) {
                 return Optional.empty();
@@ -112,10 +144,168 @@ public class MainScreenController {
             File selectedFile = fileChooser.showOpenDialog(null);
 
             if (selectedFile != null) {
+                System.out.println("handleStartButtonAction runs in thread: " + Thread.currentThread().getName());
+
                 CompletableFuture<Optional<String>> tableNameFuture = handleDialogTestInterfaceAsync(selectedFile, selectedSchema);
 
                 tableNameFuture.thenAcceptAsync(tableNameOptional -> {
+                    System.out.println("tableNameFuture.thenAcceptAsync runs in thread: " + Thread.currentThread().getName());
                     if (tableNameOptional.isPresent()) {
+                        String tableName = tableNameOptional.get();
+
+                        Platform.runLater(() -> {
+                            progressBar.setVisible(true);
+                            progressBar.setProgress(ProgressBar.INDETERMINATE_PROGRESS);
+                        });
+
+                        CompletableFuture.supplyAsync(() -> {
+                            System.out.println("Executing the rest of the logic in thread: " + Thread.currentThread().getName());
+
+                            CompletableFuture<Map<String, Double>> averageStatisticsFuture = null;
+                            CompletableFuture<Map<String, Map<String, String>>> statisticsResultFuture = null;
+                            CompletableFuture<Integer> countByGroupFuture = null;
+
+                            switch (selectedSchema) {
+                                case HUNT -> {
+                                    List<HuntData> huntDataList = DatabaseHandler.getHuntDataForTable(selectedSchema, tableName);
+                                    if (!huntDataList.isEmpty()) {
+                                        countByGroupFuture = CompletableFuture.supplyAsync(() -> countByGroup(selectedSchema, true, true, 0, 120));
+                                        averageStatisticsFuture = CompletableFuture.supplyAsync(() -> getAverageStatistics(selectedSchema, true, true, 0, 120));
+                                        statisticsResultFuture = CompletableFuture.supplyAsync(() -> HuntStatisticsCalculator.calculateStatistics(huntDataList, tableName, selectedSchema, false));
+                                    } else {
+                                        System.out.println("Нет данных для таблицы " + tableName + " в схеме " + selectedSchema);
+                                    }
+                                }
+                                case ODD_BALL_EASY, ODD_BALL_HARD -> {
+                                    List<OddBallData> oddBallDataList = DatabaseHandler.getOddBallDataForSchema(selectedSchema, tableName);
+                                    if (!oddBallDataList.isEmpty()) {
+                                        countByGroupFuture = CompletableFuture.supplyAsync(() -> countByGroup(selectedSchema, true, true, 0, 120));
+                                        averageStatisticsFuture = CompletableFuture.supplyAsync(() -> getAverageStatistics(selectedSchema, true, true, 0, 120));
+                                        statisticsResultFuture = CompletableFuture.supplyAsync(() -> OddBallStatisticsCalculator.calculateStatistics(oddBallDataList, tableName, selectedSchema, false));
+                                    } else {
+                                        System.out.println("Нет данных для таблицы " + tableName + " в схеме " + selectedSchema.getSchemaName());
+                                    }
+                                }
+                                case STROOP -> {
+                                    List<StroopData> stroopDataList = DatabaseHandler.getStroopDataForSchema(selectedSchema, tableName);
+                                    if (!stroopDataList.isEmpty()) {
+                                        countByGroupFuture = CompletableFuture.supplyAsync(() -> countByGroup(selectedSchema, true, true, 0, 120));
+                                        averageStatisticsFuture = CompletableFuture.supplyAsync(() -> getAverageStatistics(selectedSchema, true, true, 0, 120));
+                                        statisticsResultFuture = CompletableFuture.supplyAsync(() -> StroopStatisticsCalculator.calculateStatistics(stroopDataList, tableName, selectedSchema, false));
+                                    } else {
+                                        System.out.println("Нет данных для таблицы " + tableName + " в схеме " + selectedSchema.getSchemaName());
+                                    }
+                                }
+                                default -> {
+                                    System.out.println("Неизвестная схема: " + selectedSchema.getSchemaName());
+                                    Platform.runLater(() -> showAlert("Неизвестная схема: " + selectedSchema.getSchemaName()));
+                                }
+                            }
+
+                            if (averageStatisticsFuture != null && statisticsResultFuture != null) {
+                                CompletableFuture<Void> combinedFuture = CompletableFuture.allOf(averageStatisticsFuture, statisticsResultFuture, countByGroupFuture);
+
+                                final CompletableFuture<Map<String, Double>> finalAverageStatisticsFuture = averageStatisticsFuture;
+                                final CompletableFuture<Map<String, Map<String, String>>> finalStatisticsResultFuture = statisticsResultFuture;
+                                final CompletableFuture<Integer> finalCountByGroupFuture = countByGroupFuture;
+
+                                combinedFuture.thenRunAsync(() -> {
+                                    try {
+                                        Map<String, Double> averageStatisticsResultFinal = finalAverageStatisticsFuture.get();
+                                        Map<String, Map<String, String>> statisticsResultFinal = finalStatisticsResultFuture.get();
+                                        Integer countByGroupFutureFinal = finalCountByGroupFuture.get();
+
+                                        Map<String, Double> standardDeviation = getStandardDeviationStatistics(selectedSchema, true, true, 0, 120, averageStatisticsResultFinal, countByGroupFutureFinal);
+
+                                        mainController.switchToStatistic();
+                                        mainController.getStatisticsController().setSelectedTableName(tableName);
+                                        mainController.getStatisticsController().setStatisticsResult(statisticsResultFinal);
+                                        mainController.getStatisticsController().setSelectedSchema(selectedSchema);
+                                        mainController.getStatisticsController().displayStatistics(averageStatisticsResultFinal, standardDeviation);
+                                    } catch (InterruptedException | ExecutionException e) {
+                                        e.printStackTrace();
+                                    }
+                                }, Platform::runLater);
+                            }
+                            return null;
+                        }).exceptionally(ex -> {
+                            ex.printStackTrace();
+                            Platform.runLater(() -> showAlert("Произошла ошибка: " + ex.getMessage()));
+                            return null;
+                        });
+                    } else {
+                        Platform.runLater(() -> showAlert("Файл не выбран."));
+                    }
+                }).exceptionally(ex -> {
+                    ex.printStackTrace();
+                    Platform.runLater(() -> showAlert("Произошла ошибка: " + ex.getMessage()));
+                    return null;
+                });
+            } else {
+                showAlert("Выберите схему перед началом.");
+            }
+        }
+    }
+
+
+
+   /* private CompletableFuture<Optional<String>> handleDialogTestInterfaceAsync(File selectedFile, DatabaseSchema selectedSchema) {
+        return CompletableFuture.supplyAsync(() -> {
+            System.out.println("handleDialogTestInterfaceAsync runs in thread: " + Thread.currentThread().getName());
+            Optional<String> testName = InputDialogHelper.promptTestPersonName();
+            if (testName.isEmpty()) {
+                return Optional.empty();
+            }
+
+            Optional<String> gender = InputDialogHelper.promptGender();
+            if (gender.isEmpty()) {
+                return Optional.empty();
+            }
+
+            Optional<Integer> age = InputDialogHelper.promptAge();
+            if (age.isEmpty()) {
+                return Optional.empty();
+            }
+
+            String tableName = testName.get() + "_" + gender.get() + "_" + age.get() + "_test";
+            String schemaName = selectedSchema.getSchemaName();
+            String filePath = selectedFile.getAbsolutePath();
+
+            DatabaseHandler.loadAndSaveData(filePath, tableName, schemaName);
+
+            return Optional.of(tableName);
+        }, Platform::runLater);
+    }
+
+
+    @FXML
+    private void handleStartButtonAction(ActionEvent actionEvent) {
+        DatabaseSchema selectedSchema = schemaChoiceComboBox.getValue();
+
+        if (selectedSchema != null) {
+            System.out.println("Выбрана схема: " + selectedSchema.getDisplayName());
+
+            handleSchemaChoiceComboBoxAction();
+
+            FileChooser fileChooser = new FileChooser();
+            fileChooser.setTitle("Выберите файл IQDAT");
+            fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Файлы IQDAT", "*.iqdat"));
+
+            File selectedFile = fileChooser.showOpenDialog(null);
+
+            if (selectedFile != null) {
+                System.out.println("handleStartButtonAction runs in thread: " + Thread.currentThread().getName());
+
+                CompletableFuture<Optional<String>> tableNameFuture = handleDialogTestInterfaceAsync(selectedFile, selectedSchema);
+
+                tableNameFuture.thenAcceptAsync(tableNameOptional -> {
+                    System.out.println("tableNameFuture.thenAcceptAsync runs in thread: " + Thread.currentThread().getName());
+                    if (tableNameOptional.isPresent()) {
+                        Platform.runLater(() -> {
+                            progressBar.setVisible(true);
+                            progressBar.setProgress(ProgressBar.INDETERMINATE_PROGRESS);
+                        });
+
                         String tableName = tableNameOptional.get();
                         CompletableFuture<Map<String, Double>> averageStatisticsFuture = null;
                         CompletableFuture<Map<String, Map<String, String>>> statisticsResultFuture = null;
@@ -191,7 +381,7 @@ public class MainScreenController {
         } else {
             showAlert("Выберите схему перед началом.");
         }
-    }
+    }*/
 
     private void showAlert(String message) {
         Platform.runLater(() -> {

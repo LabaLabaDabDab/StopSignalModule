@@ -22,6 +22,7 @@ import java.util.stream.Collectors;
 
 public class TableController {
 
+
     @FXML
     public ListView<String> tableListView;
 
@@ -109,6 +110,11 @@ public class TableController {
                 tableView.getColumns().add(column);
             }
 
+            double columnWidth = tableView.getWidth() / columnNames.size();
+            for (TableColumn<String[], ?> column : tableView.getColumns()) {
+                column.setPrefWidth(columnWidth);
+            }
+
             tableView.getItems().clear();
             tableView.getItems().addAll(tableData);
             tableView.setVisible(true);
@@ -116,7 +122,7 @@ public class TableController {
             tableNameLabel.setText("Выбран испытуемый: " + selectedTable);
             tableNameLabel.setVisible(true);
 
-            Menu tableMenu = mainController.menuBar.getMenus().get(2);
+            Menu tableMenu = mainController.menuBar.getMenus().get(3);
             tableMenu.setVisible(true);
 
             refreshButton.setVisible(true);
@@ -124,7 +130,7 @@ public class TableController {
             tableView.setVisible(false);
             tableNameLabel.setVisible(false);
 
-            Menu tableMenu = mainController.menuBar.getMenus().get(2);
+            Menu tableMenu = mainController.menuBar.getMenus().get(3);
             tableMenu.setVisible(false);
         }
     }
@@ -154,6 +160,11 @@ public class TableController {
                 tableView.getColumns().add(column);
             }
 
+            double columnWidth = tableView.getWidth() / columnNames.size();
+            for (TableColumn<String[], ?> column : tableView.getColumns()) {
+                column.setPrefWidth(columnWidth);
+            }
+
             tableView.getItems().clear();
             tableView.getItems().addAll(tableData);
             tableView.setVisible(true);
@@ -168,8 +179,11 @@ public class TableController {
 
             tableNameLabel.setVisible(true);
 
-            Menu tableMenu = mainController.menuBar.getMenus().get(2);
+            Menu tableMenu = mainController.menuBar.getMenus().get(3);
+
             tableMenu.setVisible(true);
+
+
         } else {
             tableView.setVisible(false);
             tableNameLabel.setVisible(false);
@@ -182,7 +196,7 @@ public class TableController {
         displayTableData(selectedSchema, statisticTableName);
         refreshButton.setVisible(true);
 
-        Menu tableMenu = mainController.menuBar.getMenus().get(2);
+        Menu tableMenu = mainController.menuBar.getMenus().get(3);
         tableMenu.setVisible(false);
     }
 
@@ -212,6 +226,7 @@ public class TableController {
     private void initialize() {
         List<DatabaseSchema> schemaList = Arrays.asList(DatabaseSchema.values());
         refreshButton.setVisible(false);
+
 
         URL imageUrl = getClass().getResource("/icons/refresh_icon.png");
         if (imageUrl != null) {

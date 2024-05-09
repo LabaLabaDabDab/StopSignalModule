@@ -1,5 +1,6 @@
 package nsu.fit.khomchenko.stopsignalmodule;
 
+import javafx.concurrent.Task;
 import javafx.scene.control.Alert;
 import nsu.fit.khomchenko.stopsignalmodule.data.HuntData;
 import nsu.fit.khomchenko.stopsignalmodule.data.OddBallData;
@@ -9,23 +10,9 @@ import java.io.*;
 import java.sql.*;
 import java.util.*;
 
+import static nsu.fit.khomchenko.stopsignalmodule.data.DataBaseSettings.*;
+
 public class DatabaseHandler {
-    public static String jdbcUrl = "jdbc:postgresql://localhost:5432/postgres";
-    private static String username = "postgres";
-    private static String password = "12";
-
-    public static void setJdbcUrl(String newJdbcUrl) {
-        jdbcUrl = newJdbcUrl;
-    }
-
-    public static void setUsername(String newUsername) {
-        username = newUsername;
-    }
-
-    public static void setPassword(String newPassword) {
-        password = newPassword;
-    }
-
     static {
         try {
             Class.forName("org.postgresql.Driver");
@@ -93,6 +80,41 @@ public class DatabaseHandler {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public static void loadAndSaveDataInBackground(String filePath, String tableName, String schemaName) {
+        Task<Void> task = new Task<>() {
+            @Override
+            protected Void call() throws Exception {
+                try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
+                    String headerLine = br.readLine();
+                    if (headerLine != null) {
+                        createTable(tableName, headerLine, schemaName);
+
+                        String line;
+                        while ((line = br.readLine()) != null) {
+                            saveDataRow(tableName, line, schemaName);
+                        }
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                return null;
+            }
+        };
+
+        // Добавляем слушателя для обработки успешного завершения или ошибки задачи
+        task.setOnSucceeded(event -> {
+            System.out.println("Загрузка и сохранение данных в фоновом потоке завершено.");
+        });
+
+        task.setOnFailed(event -> {
+            System.out.println("Произошла ошибка во время загрузки и сохранения данных в фоновом потоке.");
+            task.getException().printStackTrace();
+        });
+
+        // Запускаем задачу в новом потоке
+        new Thread(task).start();
     }
 
     private static void createTable(String tableName, String headerLine, String schemaName) {

@@ -1,9 +1,0 @@
-.root {
-    -fx-background-color: #ffffff;
-}
-
-#VboxForList {
-    -fx-border-color: black;
-    -fx-border-width: 2px;
-    -fx-background-color: lightgray;
-}

@@ -7,6 +7,8 @@ module nsu.fit.khomchenko.stopsignalmodule {
     requires javafx.fxml;
     requires javafx.graphics;
     requires javafx.controls;
+    requires java.desktop;
+    requires javafx.swing;
 
 
     opens nsu.fit.khomchenko.stopsignalmodule to javafx.fxml;

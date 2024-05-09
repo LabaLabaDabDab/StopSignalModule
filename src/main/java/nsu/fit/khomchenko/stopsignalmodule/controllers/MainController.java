@@ -11,12 +11,14 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import nsu.fit.khomchenko.stopsignalmodule.DatabaseHandler;
 import nsu.fit.khomchenko.stopsignalmodule.DatabaseSchema;
 import nsu.fit.khomchenko.stopsignalmodule.data.HuntData;
 import nsu.fit.khomchenko.stopsignalmodule.data.OddBallData;
 import nsu.fit.khomchenko.stopsignalmodule.data.StroopData;
+import nsu.fit.khomchenko.stopsignalmodule.data.DataBaseSettings;
 import nsu.fit.khomchenko.stopsignalmodule.utils.HuntStatisticsCalculator;
 import nsu.fit.khomchenko.stopsignalmodule.utils.OddBallStatisticsCalculator;
 import nsu.fit.khomchenko.stopsignalmodule.utils.StroopStatisticsCalculator;
@@ -43,6 +45,8 @@ public class MainController {
     @FXML
     public MenuItem openTablesMenuItem;
     @FXML
+    public Menu closeMenu;
+    @FXML
     private MainController mainController;
     @FXML
     public MenuBar menuBar;
@@ -66,38 +70,15 @@ public class MainController {
         this.scene = scene;
     }
 
-    public MainController getMainController() {
-        return this;
-    }
 
 
     public BorderPane getBorderPane() {
         return borderPane;
     }
 
-    public void setMainScreenController(MainScreenController mainScreenController) {
-        this.mainScreenController = mainScreenController;
-    }
-
 
     public StatisticsController getStatisticsController() {
         return statisticsController;
-    }
-
-    @FXML
-    private void setLightTheme() {
-        setTheme("light");
-    }
-
-    @FXML
-    private void setDarkTheme() {
-        setTheme("dark");
-    }
-
-    private void setTheme(String theme) {
-        String stylesheet = Objects.requireNonNull(getClass().getResource("/styles/" + theme + ".css")).toExternalForm();
-        mainController.scene.getStylesheets().clear();
-        mainController.scene.getStylesheets().add(stylesheet);
     }
 
     @FXML
@@ -110,11 +91,39 @@ public class MainController {
     private void showAboutDialog() {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle("О приложении");
-        alert.setHeaderText(null);
-        alert.setContentText("Powered by Khomcha");
+        alert.setHeaderText("Модуль тестирования поведенческих данных для программы тестирования моторного контроля");
+        alert.getDialogPane().setStyle("-fx-font-size: 16px;");
 
+        Label contentLabel = new Label(
+                "Этот модуль тестирования разработан Хомченко Станиславом Евгеньевичем, ФИТ НГУ.\n" +
+                        "Модуль включает в себя следующие методики: стоп-сигнал, Odd-ball, тест Струпа.\n" +
+                        "Приложение написано на Java версии 21.\n" +
+                        "Для связи по вопросам и предложениям вы можете обратиться в Telegram:");
+
+        contentLabel.setStyle("-fx-font-size: 16px;");
+
+        Hyperlink hyperlink = new Hyperlink("https://t.me/LabaLabaDabDab");
+        hyperlink.setStyle("-fx-font-size: 16px;");
+        hyperlink.setOnAction(e -> {
+            openWebpage(hyperlink.getText());
+        });
+
+        VBox vbox = new VBox(contentLabel, hyperlink);
+        vbox.setSpacing(10);
+
+        alert.getDialogPane().setContent(vbox);
         alert.showAndWait();
     }
+
+    private void openWebpage(String url) {
+        try {
+            java.awt.Desktop.getDesktop().browse(new java.net.URI(url));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+
 
     private DatabaseSchema getSchemaByName(String displayName) {
         return Arrays.stream(DatabaseSchema.values())
@@ -187,7 +196,6 @@ public class MainController {
             showAlert();
         }
     }
-
 
     private void updateTableList(DatabaseSchema selectedSchema) {
         if (tableController != null) {
@@ -301,6 +309,8 @@ public class MainController {
 
         tableController.showTableList(tableController.searchField.getText());
 
+
+        closeMenu.setVisible(true);
         closeMenuItem.setVisible(true);
 
         tableController.tableListView.setOnMouseClicked(tableListEvent -> {
@@ -316,6 +326,7 @@ public class MainController {
 
     @FXML
     private void handleClose() {
+        closeMenu.setVisible(false);
         tableMenu.setVisible(false);
         Parent mainScreenContent = loadFXML("mainScreen");
         closeMenuItem.setVisible(false);
@@ -324,6 +335,7 @@ public class MainController {
 
     public void switchToStatistic(){
         Parent mainScreenContent = loadFXML("statistics");
+        closeMenu.setVisible(true);
         closeMenuItem.setVisible(true);
         getBorderPane().setCenter(mainScreenContent);
     }
@@ -434,14 +446,6 @@ public class MainController {
         dialog.setTitle("Настройки подключения к БД");
         dialog.setHeaderText("Введите данные для подключения к базе данных:");
 
-        ButtonType loginButtonType = new ButtonType("OK", ButtonBar.ButtonData.OK_DONE);
-        dialog.getDialogPane().getButtonTypes().addAll(loginButtonType, ButtonType.CANCEL);
-
-        GridPane gridPane = new GridPane();
-        gridPane.setHgap(10);
-        gridPane.setVgap(10);
-        gridPane.setPadding(new Insets(20, 150, 10, 10));
-
         TextField hostField = new TextField();
         hostField.setPromptText("Хост");
         TextField portField = new TextField();
@@ -453,6 +457,16 @@ public class MainController {
         PasswordField passwordField = new PasswordField();
         passwordField.setPromptText("Пароль");
 
+        Preferences prefs = Preferences.userNodeForPackage(MainController.class);
+        hostField.setText(prefs.get("host", ""));
+        portField.setText(prefs.get("port", ""));
+        databaseField.setText(prefs.get("databaseName", ""));
+        usernameField.setText(prefs.get("username", ""));
+
+        GridPane gridPane = new GridPane();
+        gridPane.setHgap(10);
+        gridPane.setVgap(10);
+        gridPane.setPadding(new Insets(20, 150, 10, 10));
         gridPane.add(new Label("Хост:"), 0, 0);
         gridPane.add(hostField, 1, 0);
         gridPane.add(new Label("Порт:"), 0, 1);
@@ -463,8 +477,10 @@ public class MainController {
         gridPane.add(usernameField, 1, 3);
         gridPane.add(new Label("Пароль:"), 0, 4);
         gridPane.add(passwordField, 1, 4);
-
         dialog.getDialogPane().setContent(gridPane);
+
+        ButtonType loginButtonType = new ButtonType("OK", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(loginButtonType, ButtonType.CANCEL);
 
         dialog.setResultConverter(dialogButton -> {
             if (dialogButton == loginButtonType) {
@@ -497,18 +513,29 @@ public class MainController {
                 Connection connection = DriverManager.getConnection(fullUrl, enteredUser, enteredPassword);
                 showAlert(Alert.AlertType.INFORMATION, "Успех", "Подключение к базе данных успешно");
 
-                changeDatabaseSettings(fullUrl, enteredUser, enteredPassword);
+                changeDatabaseSettings(fullUrl, enteredUser, enteredPassword, enteredHost, enteredPort, enteredDatabase);
 
-                DatabaseHandler.setJdbcUrl(fullUrl);
-                DatabaseHandler.setUsername(enteredUser);
-                DatabaseHandler.setPassword(enteredPassword);
+                DataBaseSettings.setJdbcUrl(fullUrl);
+                DataBaseSettings.setUsername(enteredUser);
+                DataBaseSettings.setPassword(enteredPassword);
+                DataBaseSettings.setHost(enteredHost);
+                DataBaseSettings.setPort(enteredPort);
+                DataBaseSettings.setDatabaseName(enteredDatabase);
 
                 showAlert(Alert.AlertType.INFORMATION, "Успех", "Настройки успешно изменены");
+                initializeStatistic();
             } catch (SQLException e) {
                 e.printStackTrace();
-                showErrorAlert("Ошибка", "Не удалось подключиться к базе данных: " + e.getMessage());
+                showErrorAndRetry("Не удалось подключиться к базе данных");
             }
         });
+    }
+
+    private void showErrorAndRetry(String errorMessage) {
+        showErrorAlert(errorMessage);
+
+        handleDatabaseSettings(null);
+
     }
 
     private void showAlert(Alert.AlertType alertType, String title, String message) {
@@ -519,15 +546,18 @@ public class MainController {
         alert.showAndWait();
     }
 
-    private void showErrorAlert(String title, String message) {
-        showAlert(Alert.AlertType.ERROR, title, message);
+    private void showErrorAlert(String message) {
+        showAlert(Alert.AlertType.ERROR, "Ошибка", message);
     }
 
-    public void changeDatabaseSettings(String newJdbcUrl, String newUsername, String newPassword) {
+    public void changeDatabaseSettings(String newJdbcUrl, String newUsername, String newPassword, String newHost, String newPort, String newDatabaseName) {
         Preferences prefs = Preferences.userNodeForPackage(MainController.class);
         prefs.put("jdbcUrl", newJdbcUrl);
         prefs.put("username", newUsername);
         prefs.put("password", newPassword);
+        prefs.put("host", newHost);
+        prefs.put("port", newPort);
+        prefs.put("databaseName", newDatabaseName);
     }
 
     private void loadDatabaseSettings() {
@@ -535,11 +565,18 @@ public class MainController {
         String jdbcUrl = prefs.get("jdbcUrl", "");
         String username = prefs.get("username", "");
         String password = prefs.get("password", "");
+        String host = prefs.get("host", "");
+        String port = prefs.get("port", "");
+        String databaseName = prefs.get("databaseName", "");
 
-        DatabaseHandler.setJdbcUrl(jdbcUrl);
-        DatabaseHandler.setUsername(username);
-        DatabaseHandler.setPassword(password);
+        DataBaseSettings.setJdbcUrl(jdbcUrl);
+        DataBaseSettings.setUsername(username);
+        DataBaseSettings.setPassword(password);
+        DataBaseSettings.setHost(host);
+        DataBaseSettings.setPort(port);
+        DataBaseSettings.setDatabaseName(databaseName);
     }
+
 
     public void initializeStatistic() {
         calculateAndCreateStatistics(DatabaseSchema.HUNT);
@@ -562,12 +599,6 @@ public class MainController {
         }
     }
 
-    private void recalculateStatistics() {
-        initializeStatistic();
-        showAlert(Alert.AlertType.INFORMATION, "Информация", "Статистика успешно пересчитана.");
-    }
-
-
     @FXML
     private void initialize() {
         mainController = this;
@@ -578,7 +609,7 @@ public class MainController {
         if (!isDatabaseConnected()) {
             showAlert(Alert.AlertType.WARNING, "Предупреждение", "Отсутствует подключение к базе данных. Пожалуйста, введите данные для подключения.");
         } else {
-            recalculateStatistics();
+            initializeStatistic();
         }
 
         Runtime.getRuntime().addShutdownHook(new Thread(this::deleteTestTablesFromAllSchemas));

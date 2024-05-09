@@ -18,16 +18,9 @@
                         <SeparatorMenuItem mnemonicParsing="false" />
                         <Menu mnemonicParsing="false" text="Настройки">
                             <items>
-                                <Menu mnemonicParsing="false" text="Тема">
-                                    <items>
-                                        <MenuItem mnemonicParsing="false" onAction="#setLightTheme" text="Светлая" />
-                                        <MenuItem mnemonicParsing="false" onAction="#setDarkTheme" text="Тёмная" />
-                                    </items>
-                                </Menu>
                                 <MenuItem mnemonicParsing="false" onAction="#handleDatabaseSettings" text="Подключение к БД" />
                             </items>
                         </Menu>
-                        <MenuItem fx:id="closeMenuItem" mnemonicParsing="false" onAction="#handleClose" text="Закрыть" visible="false" />
                         <SeparatorMenuItem mnemonicParsing="false" />
                         <MenuItem mnemonicParsing="false" onAction="#handleExit" text="Выход" />
                     </items>
@@ -38,6 +31,11 @@
                     </items>
                 </Menu>
             </menus>
+            <Menu fx:id="closeMenu" mnemonicParsing="false" text="Выход на главную страницу" visible="false">
+                <items>
+                    <MenuItem fx:id="closeMenuItem" mnemonicParsing="false" onAction="#handleClose" text="Закрыть" visible="false" />
+                </items>
+            </Menu>
             <Menu fx:id="tableMenu" mnemonicParsing="false" text="Таблица" visible="false">
                 <items>
                     <MenuItem mnemonicParsing="false" onAction="#handleSaveAs" text="Сохранить как..." />
