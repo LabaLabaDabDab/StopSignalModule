@@ -42,6 +42,7 @@ public class DatabaseHandler {
 
     public static Connection connect(String schemaName) {
         createSchema(schemaName);
+
         try {
             String jdbcUrlNew = jdbcUrl + "?currentSchema=" + schemaName;
             return DriverManager.getConnection(jdbcUrlNew, username, password);

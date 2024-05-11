@@ -24,9 +24,7 @@ public class MainApplication extends Application {
 
         MainController controller = fxmlLoader.getController();
         controller.setScene(scene);
-
         primaryStage.setScene(scene);
-
         primaryStage.setMaximized(true);
 
         primaryStage.setTitle("StopSignalModule");
