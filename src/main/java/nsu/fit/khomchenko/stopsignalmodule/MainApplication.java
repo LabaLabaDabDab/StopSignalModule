@@ -7,7 +7,12 @@ import javafx.scene.Scene;
 import javafx.stage.Stage;
 import nsu.fit.khomchenko.stopsignalmodule.controllers.MainController;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.io.InputStream;
+import javafx.embed.swing.SwingFXUtils;
+
 
 public class MainApplication extends Application {
     @Override
@@ -19,12 +24,19 @@ public class MainApplication extends Application {
 
         MainController controller = fxmlLoader.getController();
         controller.setScene(scene);
-
         primaryStage.setScene(scene);
-
         primaryStage.setMaximized(true);
 
-        primaryStage.setTitle("SSPModule");
+        primaryStage.setTitle("StopSignalModule");
+
+        try (InputStream iconStream = MainApplication.class.getResourceAsStream("/icons/stop_icon.png")) {
+            assert iconStream != null;
+            BufferedImage image = ImageIO.read(iconStream);
+            primaryStage.getIcons().add(SwingFXUtils.toFXImage(image, null));
+        } catch (IOException e) {
+            System.out.println("Не удалось загрузить иконку: " + e.getMessage());
+        }
+
         primaryStage.show();
     }
 

@@ -6,6 +6,7 @@ import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.effect.DropShadow;
+import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
@@ -14,11 +15,13 @@ import javafx.scene.paint.Color;
 import nsu.fit.khomchenko.stopsignalmodule.DatabaseHandler;
 import nsu.fit.khomchenko.stopsignalmodule.DatabaseSchema;
 
+import java.net.URL;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
 public class TableController {
+
 
     @FXML
     public ListView<String> tableListView;
@@ -57,6 +60,8 @@ public class TableController {
     public Button statisticButton;
     @FXML
     public ImageView refreshButton;
+    @FXML
+    public Button statisticUnhealthyButton;
 
     @FXML
     public void handleSearch(KeyEvent event) {
@@ -77,6 +82,7 @@ public class TableController {
 
         displayedTables = displayedTables.stream()
                 .filter(tableName -> !tableName.equals("summary_table"))
+                .filter(tableName -> !tableName.equals("summary_table_unhealthy"))
                 .collect(Collectors.toList());
 
         tableListView.setItems(FXCollections.observableArrayList(displayedTables));
@@ -104,6 +110,11 @@ public class TableController {
                 tableView.getColumns().add(column);
             }
 
+            double columnWidth = tableView.getWidth() / columnNames.size();
+            for (TableColumn<String[], ?> column : tableView.getColumns()) {
+                column.setPrefWidth(columnWidth);
+            }
+
             tableView.getItems().clear();
             tableView.getItems().addAll(tableData);
             tableView.setVisible(true);
@@ -111,7 +122,7 @@ public class TableController {
             tableNameLabel.setText("Выбран испытуемый: " + selectedTable);
             tableNameLabel.setVisible(true);
 
-            Menu tableMenu = mainController.menuBar.getMenus().get(2);
+            Menu tableMenu = mainController.menuBar.getMenus().get(3);
             tableMenu.setVisible(true);
 
             refreshButton.setVisible(true);
@@ -119,7 +130,7 @@ public class TableController {
             tableView.setVisible(false);
             tableNameLabel.setVisible(false);
 
-            Menu tableMenu = mainController.menuBar.getMenus().get(2);
+            Menu tableMenu = mainController.menuBar.getMenus().get(3);
             tableMenu.setVisible(false);
         }
     }
@@ -149,19 +160,30 @@ public class TableController {
                 tableView.getColumns().add(column);
             }
 
+            double columnWidth = tableView.getWidth() / columnNames.size();
+            for (TableColumn<String[], ?> column : tableView.getColumns()) {
+                column.setPrefWidth(columnWidth);
+            }
+
             tableView.getItems().clear();
             tableView.getItems().addAll(tableData);
             tableView.setVisible(true);
 
             if (tableName.equals("summary_table")) {
-                tableNameLabel.setText("Общая статистика испытуемых для : " + schema);
+                tableNameLabel.setText("Общая статистика здоровых испытуемых для : " + schema);
+            } else if (tableName.equals("summary_table_unhealthy")) {
+                tableNameLabel.setText("Общая статистика не здоровых испытуемых для : " + schema);
             } else {
                 tableNameLabel.setText("Выбран испытуемый: " + tableName);
             }
+
             tableNameLabel.setVisible(true);
 
-            Menu tableMenu = mainController.menuBar.getMenus().get(2);
+            Menu tableMenu = mainController.menuBar.getMenus().get(3);
+
             tableMenu.setVisible(true);
+
+
         } else {
             tableView.setVisible(false);
             tableNameLabel.setVisible(false);
@@ -169,16 +191,14 @@ public class TableController {
     }
 
     @FXML
-    public void showSummaryTable() {
+    public void showSummaryTable(String statisticTableName) {
         DatabaseSchema selectedSchema = schemaComboBox.getValue();
-        displayTableData(selectedSchema, "summary_table");
+        displayTableData(selectedSchema, statisticTableName);
         refreshButton.setVisible(true);
 
-        Menu tableMenu = mainController.menuBar.getMenus().get(2);
+        Menu tableMenu = mainController.menuBar.getMenus().get(3);
         tableMenu.setVisible(false);
     }
-
-
 
     @FXML
     public void handleRefreshButtonHover(MouseEvent event) {
@@ -198,7 +218,7 @@ public class TableController {
         if (selectedTable != null) {
             displayTableData(selectedSchema, selectedTable);
         } else {
-            showSummaryTable();
+            showSummaryTable("summary_table");
         }
     }
 
@@ -207,12 +227,22 @@ public class TableController {
         List<DatabaseSchema> schemaList = Arrays.asList(DatabaseSchema.values());
         refreshButton.setVisible(false);
 
+
+        URL imageUrl = getClass().getResource("/icons/refresh_icon.png");
+        if (imageUrl != null) {
+            Image image = new Image(imageUrl.toExternalForm());
+            refreshButton.setImage(image);
+        } else {
+            System.err.println("Не удалось загрузить изображение");
+        }
+
         schemaComboBox.getItems().addAll(schemaList);
 
         schemaComboBox.setValue(DatabaseSchema.HUNT);
         schemaComboBox.setOnAction(event -> handleSchemaSelection());
 
-        statisticButton.setOnAction(event -> showSummaryTable());
+        statisticButton.setOnAction(event -> showSummaryTable("summary_table"));
+        statisticUnhealthyButton.setOnAction(event -> showSummaryTable("summary_table_unhealthy"));
 
         tableListView.setOnMouseClicked(event -> {
             if (event.getClickCount() == 2) {

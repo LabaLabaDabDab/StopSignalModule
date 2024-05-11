@@ -1,5 +1,6 @@
 package nsu.fit.khomchenko.stopsignalmodule;
 
+import javafx.concurrent.Task;
 import javafx.scene.control.Alert;
 import nsu.fit.khomchenko.stopsignalmodule.data.HuntData;
 import nsu.fit.khomchenko.stopsignalmodule.data.OddBallData;
@@ -9,23 +10,9 @@ import java.io.*;
 import java.sql.*;
 import java.util.*;
 
+import static nsu.fit.khomchenko.stopsignalmodule.data.DataBaseSettings.*;
+
 public class DatabaseHandler {
-    public static String jdbcUrl = "jdbc:postgresql://localhost:5432/postgres";
-    private static String username = "postgres";
-    private static String password = "1";
-
-    public static void setJdbcUrl(String newJdbcUrl) {
-        jdbcUrl = newJdbcUrl;
-    }
-
-    public static void setUsername(String newUsername) {
-        username = newUsername;
-    }
-
-    public static void setPassword(String newPassword) {
-        password = newPassword;
-    }
-
     static {
         try {
             Class.forName("org.postgresql.Driver");
@@ -55,6 +42,7 @@ public class DatabaseHandler {
 
     public static Connection connect(String schemaName) {
         createSchema(schemaName);
+
         try {
             String jdbcUrlNew = jdbcUrl + "?currentSchema=" + schemaName;
             return DriverManager.getConnection(jdbcUrlNew, username, password);
@@ -93,6 +81,41 @@ public class DatabaseHandler {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public static void loadAndSaveDataInBackground(String filePath, String tableName, String schemaName) {
+        Task<Void> task = new Task<>() {
+            @Override
+            protected Void call() throws Exception {
+                try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
+                    String headerLine = br.readLine();
+                    if (headerLine != null) {
+                        createTable(tableName, headerLine, schemaName);
+
+                        String line;
+                        while ((line = br.readLine()) != null) {
+                            saveDataRow(tableName, line, schemaName);
+                        }
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                return null;
+            }
+        };
+
+        // Добавляем слушателя для обработки успешного завершения или ошибки задачи
+        task.setOnSucceeded(event -> {
+            System.out.println("Загрузка и сохранение данных в фоновом потоке завершено.");
+        });
+
+        task.setOnFailed(event -> {
+            System.out.println("Произошла ошибка во время загрузки и сохранения данных в фоновом потоке.");
+            task.getException().printStackTrace();
+        });
+
+        // Запускаем задачу в новом потоке
+        new Thread(task).start();
     }
 
     private static void createTable(String tableName, String headerLine, String schemaName) {
@@ -322,14 +345,17 @@ public class DatabaseHandler {
                                                     List<String> columnNames, List<Double> statistics) {
         try (Connection connection = connect(schema.getSchemaName())) {
             if (connection != null) {
-                if (!isTableExists("summary_table", connection, schema)) {
-                    createSummaryTable("summary_table", connection, schema, columnNames);
+                boolean isUnhealthy = tableNameSource.endsWith("_unhealthy");
+                String summaryTableName = isUnhealthy ? "summary_table_unhealthy" : "summary_table";
+
+                if (!isTableExists(summaryTableName, connection, schema)) {
+                    createSummaryTable(summaryTableName, connection, schema, columnNames);
                 }
 
-                if (isRecordExists(tableNameSource, connection, schema)) {
-                    updateSummaryTable(tableNameSource, connection, schema, columnNames, statistics);
+                if (isRecordExists(tableNameSource, connection, schema, summaryTableName)) {
+                    updateSummaryTable(tableNameSource, connection, schema, columnNames, statistics, summaryTableName);
                 } else {
-                    insertSummaryTable(tableNameSource, connection, schema, columnNames, statistics);
+                    insertSummaryTable(tableNameSource, connection, schema, columnNames, statistics, summaryTableName);
                 }
             }
         } catch (SQLException e) {
@@ -357,9 +383,10 @@ public class DatabaseHandler {
     }
 
 
-    private static boolean isRecordExists(String tableNameSource, Connection connection, DatabaseSchema schema) throws SQLException {
+    private static boolean isRecordExists(String tableNameSource, Connection connection, DatabaseSchema schema,
+                                          String summaryTableName) throws SQLException {
         try (PreparedStatement statement = connection.prepareStatement(
-                "SELECT * FROM " + schema.getSchemaName() + "." + "summary_table" + " WHERE source_table_name = ?")) {
+                "SELECT * FROM " + schema.getSchemaName() + "." + summaryTableName + " WHERE source_table_name = ?")) {
             statement.setString(1, tableNameSource);
             try (ResultSet resultSet = statement.executeQuery()) {
                 return resultSet.next();
@@ -368,9 +395,9 @@ public class DatabaseHandler {
     }
 
     private static void updateSummaryTable(String tableNameSource, Connection connection, DatabaseSchema schema,
-                                           List<String> columnNames, List<Double> statistics) throws SQLException {
+                                           List<String> columnNames, List<Double> statistics, String summaryTableName) throws SQLException {
         StringBuilder updateStatement = new StringBuilder();
-        updateStatement.append("UPDATE ").append(schema.getSchemaName()).append(".").append("summary_table").append(" SET ");
+        updateStatement.append("UPDATE ").append(schema.getSchemaName()).append(".").append(summaryTableName).append(" SET ");
 
         for (int i = 0; i < columnNames.size(); i++) {
             updateStatement.append(columnNames.get(i)).append(" = ?");
@@ -390,9 +417,9 @@ public class DatabaseHandler {
     }
 
     private static void insertSummaryTable(String tableNameSource, Connection connection, DatabaseSchema schema,
-                                           List<String> columnNames, List<Double> statistics) throws SQLException {
+                                           List<String> columnNames, List<Double> statistics, String summaryTableName) throws SQLException {
         StringBuilder insertStatement = new StringBuilder();
-        insertStatement.append("INSERT INTO ").append(schema.getSchemaName()).append(".").append("summary_table").append(" (source_table_name");
+        insertStatement.append("INSERT INTO ").append(schema.getSchemaName()).append(".").append(summaryTableName).append(" (source_table_name");
         for (String columnName : columnNames) {
             insertStatement.append(", ").append(columnName);
         }
@@ -480,6 +507,18 @@ public class DatabaseHandler {
             if (connection != null) {
                 try (PreparedStatement statement = connection.prepareStatement(
                         "DELETE FROM " + schema.getSchemaName() + ".summary_table WHERE source_table_name = ?")) {
+                    statement.setString(1, tableName);
+                    statement.executeUpdate();
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        try (Connection connection = connect(schema.getSchemaName())) {
+            if (connection != null) {
+                try (PreparedStatement statement = connection.prepareStatement(
+                        "DELETE FROM " + schema.getSchemaName() + ".summary_table_unhealthy WHERE source_table_name = ?")) {
                     statement.setString(1, tableName);
                     statement.executeUpdate();
                 }
@@ -676,7 +715,6 @@ public class DatabaseHandler {
             if (connection != null) {
                 try (Statement statement = connection.createStatement()) {
                     statement.executeUpdate("ALTER TABLE " + schema.getSchemaName() + "." + oldTableName + " RENAME TO " + newTableName);
-                    updateSummaryTableOnTableRename(schema, oldTableName, newTableName);
                     return true;
                 }
             }
@@ -685,20 +723,4 @@ public class DatabaseHandler {
         }
         return false;
     }
-
-    private static void updateSummaryTableOnTableRename(DatabaseSchema schema, String oldTableName, String newTableName) {
-        try (Connection connection = connect(schema.getSchemaName())) {
-            if (connection != null) {
-                try (PreparedStatement statement = connection.prepareStatement(
-                        "UPDATE " + schema.getSchemaName() + ".summary_table SET source_table_name = ? WHERE source_table_name = ?")) {
-                    statement.setString(1, newTableName);
-                    statement.setString(2, oldTableName);
-                    statement.executeUpdate();
-                }
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-
 }

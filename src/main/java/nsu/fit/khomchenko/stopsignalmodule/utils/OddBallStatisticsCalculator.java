@@ -5,6 +5,7 @@ import nsu.fit.khomchenko.stopsignalmodule.DatabaseSchema;
 import nsu.fit.khomchenko.stopsignalmodule.data.OddBallData;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static nsu.fit.khomchenko.stopsignalmodule.utils.StatisticsHelper.createMap;
 
@@ -101,7 +102,7 @@ public class OddBallStatisticsCalculator {
         List<OddBallData> filteredData = dataList.stream()
                 .filter(data -> (data.getTrialcode().equals("oddball") && !data.getResponse().equals("0")) ||
                         (data.getTrialcode().equals("baseline") && data.getResponse().equals("0")))
-                .toList();
+                .collect(Collectors.toList());
 
         double totalReactionTime = filteredData.stream()
                 .mapToDouble(data -> Double.parseDouble(data.getLatency()))

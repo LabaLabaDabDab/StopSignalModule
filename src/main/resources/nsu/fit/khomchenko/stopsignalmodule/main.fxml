@@ -7,7 +7,7 @@
 <?import javafx.scene.layout.VBox?>
 
 <?import javafx.scene.control.SeparatorMenuItem?>
-<BorderPane fx:id="borderPane" prefHeight="246.0" prefWidth="878.0" xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1" fx:controller="nsu.fit.khomchenko.stopsignalmodule.controllers.MainController">
+<BorderPane fx:id="borderPane" prefHeight="246.0" prefWidth="878.0" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="nsu.fit.khomchenko.stopsignalmodule.controllers.MainController">
     <top>
         <MenuBar fx:id="menuBar" prefHeight="21.0" prefWidth="877.0" VBox.vgrow="NEVER">
             <menus>
@@ -18,16 +18,9 @@
                         <SeparatorMenuItem mnemonicParsing="false" />
                         <Menu mnemonicParsing="false" text="Настройки">
                             <items>
-                                <Menu mnemonicParsing="false" text="Тема">
-                                    <items>
-                                        <MenuItem mnemonicParsing="false" onAction="#setLightTheme" text="Светлая" />
-                                        <MenuItem mnemonicParsing="false" onAction="#setDarkTheme" text="Тёмная" />
-                                    </items>
-                                </Menu>
                                 <MenuItem mnemonicParsing="false" onAction="#handleDatabaseSettings" text="Подключение к БД" />
                             </items>
                         </Menu>
-                        <MenuItem fx:id="closeMenuItem" mnemonicParsing="false" onAction="#handleClose" text="Закрыть" visible="false" />
                         <SeparatorMenuItem mnemonicParsing="false" />
                         <MenuItem mnemonicParsing="false" onAction="#handleExit" text="Выход" />
                     </items>
@@ -38,6 +31,11 @@
                     </items>
                 </Menu>
             </menus>
+            <Menu fx:id="closeMenu" mnemonicParsing="false" text="Выход на главную страницу" visible="false">
+                <items>
+                    <MenuItem fx:id="closeMenuItem" mnemonicParsing="false" onAction="#handleClose" text="Закрыть" visible="false" />
+                </items>
+            </Menu>
             <Menu fx:id="tableMenu" mnemonicParsing="false" text="Таблица" visible="false">
                 <items>
                     <MenuItem mnemonicParsing="false" onAction="#handleSaveAs" text="Сохранить как..." />

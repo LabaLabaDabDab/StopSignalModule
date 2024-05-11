@@ -1,11 +1,14 @@
 module nsu.fit.khomchenko.stopsignalmodule {
-    requires javafx.controls;
-    requires javafx.fxml;
     requires java.sql;
     requires lombok;
     requires java.prefs;
     requires commons.math3;
     requires org.postgresql.jdbc;
+    requires javafx.fxml;
+    requires javafx.graphics;
+    requires javafx.controls;
+    requires java.desktop;
+    requires javafx.swing;
 
 
     opens nsu.fit.khomchenko.stopsignalmodule to javafx.fxml;
