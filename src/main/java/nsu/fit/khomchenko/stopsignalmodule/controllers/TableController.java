@@ -170,9 +170,9 @@ public class TableController {
             tableView.setVisible(true);
 
             if (tableName.equals("summary_table")) {
-                tableNameLabel.setText("Общая статистика здоровых испытуемых для : " + schema);
+                tableNameLabel.setText("Общая статистика испытуемых без нарушений для : " + schema);
             } else if (tableName.equals("summary_table_unhealthy")) {
-                tableNameLabel.setText("Общая статистика не здоровых испытуемых для : " + schema);
+                tableNameLabel.setText("Общая статистика испытуемых с нарушениями для : " + schema);
             } else {
                 tableNameLabel.setText("Выбран испытуемый: " + tableName);
             }
@@ -182,8 +182,6 @@ public class TableController {
             Menu tableMenu = mainController.menuBar.getMenus().get(3);
 
             tableMenu.setVisible(true);
-
-
         } else {
             tableView.setVisible(false);
             tableNameLabel.setVisible(false);

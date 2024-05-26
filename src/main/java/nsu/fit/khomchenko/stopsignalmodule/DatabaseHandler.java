@@ -7,6 +7,8 @@ import nsu.fit.khomchenko.stopsignalmodule.data.OddBallData;
 import nsu.fit.khomchenko.stopsignalmodule.data.StroopData;
 
 import java.io.*;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.sql.*;
 import java.util.*;
 
@@ -104,7 +106,6 @@ public class DatabaseHandler {
             }
         };
 
-        // Добавляем слушателя для обработки успешного завершения или ошибки задачи
         task.setOnSucceeded(event -> {
             System.out.println("Загрузка и сохранение данных в фоновом потоке завершено.");
         });
@@ -114,7 +115,7 @@ public class DatabaseHandler {
             task.getException().printStackTrace();
         });
 
-        // Запускаем задачу в новом потоке
+
         new Thread(task).start();
     }
 
@@ -439,7 +440,13 @@ public class DatabaseHandler {
     }
 
     private static String formatValue(double value, String columnName) {
-        return columnName.toLowerCase().contains("percentage") ? String.format("%.2f%%", value) : String.valueOf(value);
+        if (columnName.toLowerCase().contains("count")) {
+            return String.format("%.0f", value);
+        } else if (columnName.toLowerCase().contains("percentage")) {
+            return String.format("%.2f%%", value);
+        } else {
+            return String.format("%.2f", value);
+        }
     }
 
     public static List<HuntData> getHuntDataForTable(DatabaseSchema schema, String tableName) {
@@ -567,7 +574,8 @@ public class DatabaseHandler {
                         for (int i = 1; i <= columnCount; i++) {
                             String columnName = metaData.getColumnName(i);
                             double columnAverage = resultSet.getDouble(i);
-                            averageValuesMap.put(columnName, columnAverage);
+                            double roundedValue = BigDecimal.valueOf(columnAverage).setScale(2, RoundingMode.HALF_UP).doubleValue();
+                            averageValuesMap.put(columnName, roundedValue);
                         }
                     }
                 }

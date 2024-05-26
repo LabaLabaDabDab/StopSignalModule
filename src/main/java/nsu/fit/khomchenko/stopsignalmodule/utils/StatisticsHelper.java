@@ -1,5 +1,7 @@
 package nsu.fit.khomchenko.stopsignalmodule.utils;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -46,5 +48,12 @@ public class StatisticsHelper {
         }
 
         return participantInfo;
+    }
+
+
+    public static double formatValue(double value) {
+        BigDecimal bd = BigDecimal.valueOf(value);
+        bd = bd.setScale(2, RoundingMode.HALF_UP);
+        return bd.doubleValue();
     }
 }

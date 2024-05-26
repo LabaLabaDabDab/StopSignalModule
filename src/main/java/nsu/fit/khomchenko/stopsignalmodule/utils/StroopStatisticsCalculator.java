@@ -34,15 +34,15 @@ public class StroopStatisticsCalculator {
         double averageLatencyForCorrectNonStroopPresses = calculateAverageLatencyForCorrectNonStroopPresses(filteredData);
         double individualTimeNonStroopDispersion = calculateIndividualTimeNonStroopDispersion(filteredData);
 
-        statisticsMap.put("successful_answers_all_percentage", createMap("Процент правильных ответов (все)", successfulAnswersAllPercentage));
-        statisticsMap.put("average_latency_for_correct_all_presses", createMap("Среднее время правильной реакции (все)", averageLatencyForCorrectAllPresses));
-        statisticsMap.put("individual_time_all_dispersion", createMap("Стандартное отклонение времени правильной реакции (все)", individualTimeAllDispersion));
-        statisticsMap.put("successful_answers_stroop_percentage", createMap("Процент правильных ответов (струп)", successfulAnswersStroopPercentage));
-        statisticsMap.put("average_latency_for_correct_stroop_presses", createMap("Среднее время правильной реакции (струп)", averageLatencyForCorrectStroopPresses));
-        statisticsMap.put("individual_time_stroop_dispersion", createMap("Стандартное отклонение времени правильной реакции (струп)", individualTimeStroopDispersion));
-        statisticsMap.put("successful_answers_non_stroop_percentage", createMap("Процент правильных ответов (не-струп)", successfulAnswersNonStroopPercentage));
-        statisticsMap.put("average_latency_for_correct_non_stroop_presses", createMap("Среднее время правильной реакции (не-струп)", averageLatencyForCorrectNonStroopPresses));
-        statisticsMap.put("individual_time_non_stroop_dispersion", createMap("Стандартное отклонение времени правильной реакции (не-струп)", individualTimeNonStroopDispersion));
+        statisticsMap.put("successful_answers_all_percentage", createMap("Процент правильных ответов (все)(%)", successfulAnswersAllPercentage));
+        statisticsMap.put("average_latency_for_correct_all_presses", createMap("Среднее время правильной реакции (все)(мс)", averageLatencyForCorrectAllPresses));
+        statisticsMap.put("individual_time_all_dispersion", createMap("Стандартное отклонение времени правильной реакции (все)(мс/кол)", individualTimeAllDispersion));
+        statisticsMap.put("successful_answers_stroop_percentage", createMap("Процент правильных ответов (струп)(%)", successfulAnswersStroopPercentage));
+        statisticsMap.put("average_latency_for_correct_stroop_presses", createMap("Среднее время правильной реакции (струп)(мс)", averageLatencyForCorrectStroopPresses));
+        statisticsMap.put("individual_time_stroop_dispersion", createMap("Стандартное отклонение времени правильной реакции (струп)(мс/кол)", individualTimeStroopDispersion));
+        statisticsMap.put("successful_answers_non_stroop_percentage", createMap("Процент правильных ответов (не-струп)(%)", successfulAnswersNonStroopPercentage));
+        statisticsMap.put("average_latency_for_correct_non_stroop_presses", createMap("Среднее время правильной реакции (не-струп)(мс)", averageLatencyForCorrectNonStroopPresses));
+        statisticsMap.put("individual_time_non_stroop_dispersion", createMap("Стандартное отклонение времени правильной реакции (не-струп)(мс/кол)", individualTimeNonStroopDispersion));
 
         if (saveToDatabase) {
             List<Double> values = Arrays.asList(
