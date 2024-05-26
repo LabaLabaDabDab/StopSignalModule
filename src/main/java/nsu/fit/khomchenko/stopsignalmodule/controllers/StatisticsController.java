@@ -18,7 +18,6 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
 import static nsu.fit.khomchenko.stopsignalmodule.DatabaseHandler.*;
-import static nsu.fit.khomchenko.stopsignalmodule.controllers.MainController.*;
 
 public class StatisticsController {
     @FXML
@@ -44,13 +43,11 @@ public class StatisticsController {
 
     private String selectedTableName;
 
-    private DatabaseHandler databaseHandler;
 
     private Map<String, Map<String, String>> statisticsResult;
 
     @FXML
     private MainController mainController;
-
 
     public void setSelectedSchema(DatabaseSchema schema) {
         this.selectedSchema = schema;
@@ -263,7 +260,7 @@ public class StatisticsController {
     private void saveStatistics(ActionEvent event) {
         String newTableName = selectedTableName;
 
-        ChoiceDialog<String> dialog = new ChoiceDialog<>("здоровый", "здоровый", "не здоровый");
+        ChoiceDialog<String> dialog = new ChoiceDialog<>("без нарушений", "без нарушений", "с нарушениями");
         dialog.setTitle("Выбор типа сохранения");
         dialog.setHeaderText("Выберите тип сохранения испытуемого:");
         dialog.setContentText("Тип:");

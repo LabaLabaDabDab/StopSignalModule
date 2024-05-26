@@ -9,6 +9,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static nsu.fit.khomchenko.stopsignalmodule.utils.StatisticsHelper.createMap;
+import static nsu.fit.khomchenko.stopsignalmodule.utils.StatisticsHelper.formatValue;
 
 
 public class HuntStatisticsCalculator {
@@ -25,12 +26,12 @@ public class HuntStatisticsCalculator {
         statisticsMap.put("participant_info", participantInfo);
 
 
-        statisticsMap.put("successful_stops_percentage", createMap("Процент успешных торможений", successfulStopsPercentage));
-        statisticsMap.put("missed_presses_count", createMap("Количество пропущенных нажатий", missedPresses));
-        statisticsMap.put("incorrect_presses_count", createMap("Количество неправильных нажатий", incorrectPresses));
-        statisticsMap.put("correct_presses_percentage", createMap("Процент правильных нажатий", correctPressesPercentage));
-        statisticsMap.put("average_latency_for_correct_presses", createMap("Среднее время для правильных нажатий", averageLatencyForCorrectPresses));
-        statisticsMap.put("individual_time_dispersion", createMap("Стандартное отклонение по времени для правильных нажатий", individualTimeDispersion));
+        statisticsMap.put("successful_stops_percentage", createMap("Процент успешных торможений(%)",  formatValue(successfulStopsPercentage)));
+        statisticsMap.put("missed_presses_count", createMap("Количество пропущенных нажатий",  formatValue(missedPresses)));
+        statisticsMap.put("incorrect_presses_count", createMap("Количество неправильных нажатий",  formatValue(incorrectPresses)));
+        statisticsMap.put("correct_presses_percentage", createMap("Процент правильных нажатий(%)",  formatValue(correctPressesPercentage)));
+        statisticsMap.put("average_latency_for_correct_presses", createMap("Среднее время для правильных нажатий(мс)",  formatValue(averageLatencyForCorrectPresses)));
+        statisticsMap.put("individual_time_dispersion", createMap("Стандартное отклонение по времени для правильных нажатий(мс/кол)",  formatValue(individualTimeDispersion)));
 
 
         if (saveToDatabase) {

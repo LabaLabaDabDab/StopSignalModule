@@ -13,7 +13,7 @@
             <menus>
                 <Menu mnemonicParsing="false" text="Файл">
                     <items>
-                        <MenuItem mnemonicParsing="false" onAction="#handleChooseFile" text="Добавить новый файл" />
+                        <MenuItem mnemonicParsing="false" onAction="#handleChooseFile" text="Добавить данные испытуемого без нарушений" />
                         <MenuItem fx:id="openTablesMenuItem" mnemonicParsing="false" onAction="#handleOpenTables" text="Открыть загруженные файлы" />
                         <SeparatorMenuItem mnemonicParsing="false" />
                         <Menu mnemonicParsing="false" text="Настройки">

@@ -22,10 +22,10 @@ public class OddBallStatisticsCalculator {
         Map<String, String> participantInfo = StatisticsHelper.extractParticipantInfo(tableName);
         statisticsMap.put("participant_info", participantInfo);
 
-        statisticsMap.put("incorrect_presses_off_target_tone_percentage", createMap("Процент некорректных нажатий после нецелевого тона", incorrectPressesOffTargetTonePercentage));
-        statisticsMap.put("correct_presses_target_tone_percentage", createMap("Процент корректных нажатий после целевого тона", correctPressesTargetTonePercentage));
-        statisticsMap.put("average_reaction_time", createMap("Среднее время правильной реакции", averageReactionTime));
-        statisticsMap.put("individual_time_dispersion", createMap("Среднее квадратичное отклонение по правильной реакции", timeDispersion));
+        statisticsMap.put("incorrect_presses_off_target_tone_percentage", createMap("Процент некорректных нажатий после нецелевого тона(%)", incorrectPressesOffTargetTonePercentage));
+        statisticsMap.put("correct_presses_target_tone_percentage", createMap("Процент корректных нажатий после целевого тона(%)", correctPressesTargetTonePercentage));
+        statisticsMap.put("average_reaction_time", createMap("Среднее время правильной реакции(мс)", averageReactionTime));
+        statisticsMap.put("individual_time_dispersion", createMap("Среднее квадратичное отклонение по правильной реакции(мс/кол)", timeDispersion));
         statisticsMap.put("premature_presses", createMap("Среднее количество преждевременных нажатий", prematurePresses));
 
         if (saveToDatabase) {
